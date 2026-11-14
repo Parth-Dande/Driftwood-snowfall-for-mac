@@ -1,36 +1,70 @@
 # Driftwood
 
-Driftwood is a macOS wallpaper app with six original illustrated scenes and matching animated weather. Snow builds up on window ledges, falls when they move, and can settle on exposed windows below. Driftwood runs offline.
+Driftwood puts weather on your Mac desktop. Pick one of six illustrated scenes and snow, rain, petals, leaves, fireflies or meteors fall over your wallpaper, land on your windows and react when you move them. It runs offline and uses about half a percent of one CPU core.
 
 ## Install
 
-Download **Driftwood-macOS.zip** from [GitHub Releases](https://github.com/Parth-Dande/driftwood/releases/latest), unzip it, and open **Driftwood.app**. Driftwood supports macOS 14 or later on Apple silicon and Intel. The release is ad hoc signed. If macOS blocks the download, use the local build instructions below.
+Download **Driftwood-macOS.zip** from [GitHub Releases](https://github.com/Parth-Dande/driftwood/releases/latest), unzip it, and open **Driftwood.app**. Driftwood needs macOS 14 or later and runs on Apple silicon and Intel. The release is ad hoc signed; if macOS blocks it, build it yourself with the instructions below. Building from source also gives you the newest version when a release has not been published yet.
 
-## Use Driftwood
+## Scenes
 
-- Choose a scene in the gallery and select **Apply to All Displays**.
-- Use **Weather density** for particle count and larger snowflakes at the high end and **Fall speed** for how slowly the weather moves. Both sliders are in the gallery and the cloud-and-moon menu bar popover. Your settings are saved. Turning **Motion** off keeps the scene visible.
-- In **Snow Lantern Inn**, drag from the exposed bottom edge of the screen to roll a snowball. Release it above a placed ball to stack them. The top ball gets a face and scarf when three balls stack. Drop a ball above the visible Dock to set it there. The bottom snowbank grows where flakes land. Choose **Plough Snow** in the menu bar to clear accumulated snow and snowmen while flakes keep falling. Snowbanks also grow on visible window tops and the Dock where macOS exposes its position. Snow passes behind Stage Manager thumbnails.
-- Use **Import Video…** to loop a local MP4 or MOV silently. The file stays in its original location.
-- Close the gallery to leave the wallpaper running. Use the cloud-and-moon menu bar icon to reopen it or switch scenes.
-- Choose **Clear** or quit Driftwood to reveal your regular desktop picture.
+| Scene | Weather | What it does |
+| --- | --- | --- |
+| Snow Lantern Inn | Snow | Piles up on window tops and the ground, and can be rolled into snowballs |
+| The Rainy Bookshop | Rain | Splashes on window tops and the ground, with lightning now and then |
+| Blossom Creek | Petals | Drift down and rest on your windows for a while |
+| Cider Mill | Leaves | Pile up and scatter when the pointer brushes past |
+| Lantern Marsh | Fireflies | Wander, and gather round a pointer that holds still |
+| Campfire Lake | Meteors | Streak across and burst into sparks on your windows |
 
-The weather is drawn in a transparent Metal overlay. Open windows mask the weather over their contents. Clicks pass through the weather, and the snow pickup area sits below regular windows. Snow builds into visible drifts that break into falling flakes when a window moves or resizes. When a window is closed or minimized, its snow drops from the old window position. Petals and leaves can also settle on windows. Leaves also scatter near a moving pointer. Rain splashes against windows and the screen bottom, with occasional lightning. Fireflies drift toward a resting pointer, and meteors throw off sparks when they hit. Window collisions use the visible macOS window bounds. Browser tabs that share a window share its top edge.
+## Using Driftwood
 
-Driftwood halves particle density while running on battery or in Low Power Mode. Display-synchronized rendering targets 30 frames per second on wall power and up to 24 on battery or in Low Power Mode. The fine flakes are drawn as soft-edged GPU sprites. A sleeping display or one covered by a full-screen window pauses its weather and video playback. The app applies the same scene or video to every connected display for the current session. Its desktop layer is separate from the system wallpaper and lock screen.
+- Choose a scene in the gallery and select **Apply to All Displays**. The scene comes back the next time Driftwood opens.
+- **Weather density** sets how much falls; at the high end snowflakes also get larger. **Fall speed** runs weather time faster or slower, and its default is natural speed. Both sliders are in the gallery and in the cloud-and-moon menu bar item, and both are saved.
+- Turn **Motion** off to keep the picture and stop the weather.
+- Close the gallery to leave the wallpaper running. The menu bar item reopens it, switches scenes and quits.
+- **Clear**, or quitting Driftwood, shows your regular desktop picture again.
+
+### Snow
+
+- Snow builds up on window tops and settles into drifts along the bottom of the screen. Each drift takes its outline from where the snow happened to land, so it never builds the same way twice.
+- Move a window steadily and its snow rides along. Shake it and the snow flies off to both sides. Stop it short on the way up and the snow is tossed into the air. Resize it and only the strip that lost its footing drops, onto another window if one is below.
+- Run the pointer along a window's top edge or the ground to brush the snow off.
+- Drag up from the bottom edge of the screen to roll a snowball. Let go over another ball to stack it; three make a snowman with a hat, face, scarf, buttons and arms. Let go while moving fast to throw it instead.
+- **Plough** in the menu bar sends a plough across the screen. Snow on window ledges tips off, and the blade clears the drifts and snowmen as it passes.
+
+### Your own wallpaper
+
+Select **Change Wallpaper…** in the gallery to put your own picture behind the selected scene's weather, and **Use Original** to bring the bundled artwork back. A landscape JPEG, PNG or HEIC at least as large as your biggest display in pixels stays sharp; the gallery shows that size. Your picture is copied into `~/Library/Application Support/Driftwood/Wallpapers`.
+
+## How it behaves
+
+- The weather is a transparent overlay that sits just beneath the Dock and above your windows. Open windows hide the weather over their contents, and clicks pass straight through.
+- Collisions use the window bounds macOS reports, so browser tabs that share a window share its top edge. Weather passes behind Stage Manager thumbnails.
+- A sleeping display, or one covered by a full-screen window, pauses its weather. When the desktop comes back, or you switch Space, everything clears and starts again from nothing after about three seconds.
+- On battery or in Low Power Mode Driftwood halves the density.
+- Driftwood's desktop layer is separate from the system wallpaper and the lock screen.
+
+## How it works
+
+Every particle is a body falling under gravity against air drag, with its own terminal speed, carried by slow gusts that neighbouring particles share. Bigger flakes are heavier and fall faster, leaves and petals rock and slow at the ends of each swing, and sparks and splashes follow ballistic arcs.
+
+Driftwood works out each particle's whole path once and hands it to the macOS compositor, which plays it back at the display's own refresh rate, including 120 Hz. Driftwood itself wakes about five times a second to launch new particles and look at your windows, and up to sixty times a second while you drag a window. On an Apple M4 with two displays that comes to about 0.5% of one CPU core at the default settings and 1 to 3% with both sliders at maximum.
 
 ## Build from source
 
-With Xcode Command Line Tools or Xcode installed, run these commands from the repository root:
+With the Xcode Command Line Tools or Xcode installed, run these from the repository root:
 
 ```sh
 ./build.sh
 open build/Driftwood.app
 ```
 
-The build uses the macOS SDK, produces a universal binary, and has no package dependencies.
+The build produces a universal binary and has no package dependencies. With only the Command Line Tools installed, `build.sh` picks an SDK whose SwiftUI does not need Xcode's macro plugin; set `DRIFTWOOD_SDK` to an SDK path to choose one yourself.
 
-Run the physics checks from the repository root:
+To start a scene straight away, pass its name: `open build/Driftwood.app --args -applyScene snow`. The names are `snow`, `rain`, `petals`, `leaves`, `fireflies` and `stars`.
+
+Run the physics checks:
 
 ```sh
 mkdir -p build
@@ -42,14 +76,18 @@ xcrun swiftc Sources/WeatherPhysics.swift Sources/Snowballs.swift Tests/WeatherP
 
 | Path | Contents |
 | --- | --- |
-| `Sources/` | SwiftUI gallery, desktop overlay, Metal rendering, and weather simulation |
-| `Tests/` | Weather and snowball physics regression tests |
-| `Artwork/` | Six bundled wallpapers and their references |
+| `Sources/Driftwood.swift` | The app, gallery and menu bar item |
+| `Sources/Scenes.swift` | The six scenes, their pictures and the gallery preview |
+| `Sources/DesktopWeather.swift` | Overlay windows, window tracking and timing |
+| `Sources/WeatherLayers.swift` | Core Animation rendering of particles, drifts, plough and snowmen |
+| `Sources/WeatherPhysics.swift` | Gravity, drag, wind, collisions and snowbanks |
+| `Sources/Snowballs.swift` | Rolling, stacking and throwing snowballs |
+| `Tests/` | Physics regression tests |
+| `Artwork/` | The six wallpapers, the app icon and the artwork references |
 | `build.sh` | Builds the universal macOS app |
-| `LICENSE` and `LICENSE-WallFlow` | MIT license and upstream attribution |
 
 ## Credits and license
 
 KoiArt’s public wallpaper gallery and weather demo video inspired the themed wallpapers, all-displays action, and desktop weather interactions. Driftwood’s artwork, particles, interface, and name were made independently. The six bundled wallpapers were generated for Driftwood with ImageGen. See [Artwork/REFERENCES.md](Artwork/REFERENCES.md) for the visual references and prompts. The app includes no KoiArt artwork, videos, branding, or code.
 
-Driftwood reuses the desktop window, display identification, and video looping code from [WallFlow](https://github.com/ritulsingh/WallFlow/tree/b0946f519e9b8143e223ba3a9dceeca454f206a8), copyright 2026 ritulsingh, under the MIT license. The desktop window code was adapted for this app. See [LICENSE-WallFlow](LICENSE-WallFlow) for the full upstream notice. The original Driftwood portions are also available under MIT terms in [LICENSE](LICENSE).
+Driftwood reuses the desktop window and display identification code from [WallFlow](https://github.com/ritulsingh/WallFlow/tree/b0946f519e9b8143e223ba3a9dceeca454f206a8), copyright 2026 ritulsingh, under the MIT license. The desktop window code was adapted for this app. See [LICENSE-WallFlow](LICENSE-WallFlow) for the full upstream notice. The original Driftwood portions are also available under MIT terms in [LICENSE](LICENSE).

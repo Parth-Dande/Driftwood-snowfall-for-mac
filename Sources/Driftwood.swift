@@ -1,14 +1,12 @@
 import AppKit
-import AVFoundation
 import SwiftUI
 import UniformTypeIdentifiers
 
 @MainActor
 @Observable
 final class Desktop {
-    var active: Scene?
-    var video: URL?
-    var motion = true { didSet { weather.motion = motion; weather.refreshPlayback() } }
+    private(set) var active: Scene?
+    var motion = true { didSet { weather.motion = motion; weather.refresh() } }
     var intensity = UserDefaults.standard.object(forKey: "weatherDensity") as? Double ?? 0.55 {
         didSet {
             weather.density = intensity
@@ -21,106 +19,92 @@ final class Desktop {
             UserDefaults.standard.set(speed, forKey: "weatherSpeed")
         }
     }
-    private let weather = DesktopWeather()
     var error: String?
-    var importing = false
+    /// A passing remark for the status line, such as a picture being smaller than the display.
+    var notice: String?
+    private let weather = DesktopWeather()
     private var windows: [CGDirectDisplayID: WallpaperWindow] = [:]
     private var observation: NSObjectProtocol?
 
     init() {
         weather.density = intensity
         weather.speed = speed
-        weather.onVideoPlayback = { [weak self] id, playing in
-            guard let controller = self?.windows[id]?.videoController else { return }
-            if playing { controller.play() }
-            else { controller.pause() }
-        }
         observation = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
         ) { [weak self] _ in
             Task { @MainActor in self?.sync() }
         }
+        let wanted = UserDefaults.standard.string(forKey: "applyScene") ?? UserDefaults.standard.string(forKey: "activeScene")
+        if let scene = Scene.catalog.first(where: { $0.id == wanted }) {
+            DispatchQueue.main.async { [weak self] in self?.apply(scene) }
+        }
     }
 
     func apply(_ scene: Scene) {
         active = scene
-        video = nil
+        notice = nil
+        UserDefaults.standard.set(scene.id, forKey: "activeScene")
         rebuild()
     }
-
-    func chooseVideo() {
-        let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.mpeg4Movie, .quickTimeMovie]
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.message = "Choose a local MP4 or MOV to loop silently."
-        NSApp.activate(ignoringOtherApps: true)
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        importing = true
-        Task {
-            defer { importing = false }
-            do {
-                let asset = AVURLAsset(url: url)
-                let duration = try await asset.load(.duration)
-                let playable = try await asset.load(.isPlayable)
-                let tracks = try await asset.loadTracks(withMediaType: .video)
-                guard playable, !tracks.isEmpty, duration.seconds.isFinite, duration.seconds > 0 else {
-                    error = "Choose a playable MP4 or MOV containing a video track."
-                    return
-                }
-                active = nil
-                video = url
-                rebuild()
-            } catch {
-                self.error = "Couldn’t open \(url.lastPathComponent). \(error.localizedDescription)"
-            }
-        }
-    }
-
-    func ploughSnow() { weather.ploughSnow() }
 
     func clear() {
         active = nil
-        video = nil
+        notice = nil
+        UserDefaults.standard.removeObject(forKey: "activeScene")
         rebuild()
     }
 
-    private func removeWindow(_ id: CGDirectDisplayID) {
-        guard let window = windows.removeValue(forKey: id) else { return }
-        window.videoController.teardown()
-        window.close()
+    func plough() { weather.plough() }
+
+    /// Lets the user put their own picture behind a scene's weather.
+    func chooseWallpaper(for scene: Scene) {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.jpeg, .png, .heic, .tiff]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.message = "Choose a picture for \(scene.name). \(Wallpapers.guidance)"
+        panel.prompt = "Use Picture"
+        NSApp.activate(ignoringOtherApps: true)
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            notice = try Wallpapers.shared.replace(scene, with: url)
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    func resetWallpaper(for scene: Scene) {
+        Wallpapers.shared.reset(scene)
+        notice = nil
     }
 
     private func rebuild() {
-        for id in Array(windows.keys) { removeWindow(id) }
+        for window in windows.values { window.close() }
+        windows.removeAll()
         sync()
     }
 
     private func sync() {
-        guard active != nil || video != nil else {
+        guard let active else {
+            for window in windows.values { window.close() }
+            windows.removeAll()
             weather.stop()
             return
         }
         let screens = NSScreen.screens
         let ids = Set(screens.map(\.displayID))
-        for id in Array(windows.keys) where !ids.contains(id) { removeWindow(id) }
+        for id in Array(windows.keys) where !ids.contains(id) { windows.removeValue(forKey: id)?.close() }
         for screen in screens {
             if let window = windows[screen.displayID] {
                 window.match(screen: screen)
                 continue
             }
             let window = WallpaperWindow(screen: screen)
-            if let active {
-                window.contentView = NSHostingView(rootView: SceneArtwork(scene: active))
-            } else if let video {
-                window.videoController.load(url: video, muted: true, fill: true)
-            }
+            window.contentView = NSHostingView(rootView: SceneArtwork(scene: active))
             windows[screen.displayID] = window
             window.orderFrontRegardless()
         }
-        if !weather.configure(effect: active?.id, screens: screens, video: video != nil) {
-            error = "Driftwood couldn’t start Metal. The still wallpaper is active."
-        }
+        weather.configure(effect: active.id, screens: screens)
     }
 }
 
@@ -133,7 +117,7 @@ struct LiveScene: View {
     var body: some View {
         SceneArtwork(scene: scene)
             .overlay {
-                if desktop.motion, windowActivity == .key, desktop.active == nil, desktop.video == nil {
+                if desktop.motion, windowActivity == .key, desktop.active == nil {
                     Weather(scene: scene, running: true, strength: desktop.intensity, speed: desktop.speed)
                 }
             }
@@ -153,8 +137,17 @@ struct Gallery: View {
                     Text("Weather for your desktop").font(.system(size: 27, weight: .medium, design: .serif))
                 }
                 Spacer()
-                Button("Import Video…") { desktop.chooseVideo() }
-                    .disabled(desktop.importing)
+                VStack(alignment: .trailing, spacing: 5) {
+                    HStack(spacing: 8) {
+                        if Wallpapers.shared.isCustom(selection) {
+                            Button("Use Original") { desktop.resetWallpaper(for: selection) }
+                        }
+                        Button("Change Wallpaper…") { desktop.chooseWallpaper(for: selection) }
+                            .help(Wallpapers.guidance)
+                    }
+                    Text("Best at \(Int(Wallpapers.recommendedSize.width)) × \(Int(Wallpapers.recommendedSize.height)) px or larger, landscape")
+                        .font(.caption2).foregroundStyle(.secondary)
+                }
             }
 
             LiveScene(scene: selection, desktop: desktop)
@@ -213,11 +206,10 @@ struct Gallery: View {
                     .disabled(!desktop.motion)
                 Spacer()
                 Button("Clear") { desktop.clear() }
-                    .disabled(desktop.active == nil && desktop.video == nil || desktop.importing)
+                    .disabled(desktop.active == nil)
                 Button("Apply to All Displays") { desktop.apply(selection) }
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.defaultAction)
-                    .disabled(desktop.importing)
             }
             Text(status)
                 .font(.caption).foregroundStyle(.secondary)
@@ -238,10 +230,9 @@ struct Gallery: View {
     }
 
     private var status: String {
-        if desktop.importing { return "Checking video…" }
+        if let notice = desktop.notice { return notice }
         if desktop.active?.id == "snow" { return "Drag snow up from the bottom edge. Drop one ball above another to stack them." }
         if let active = desktop.active { return "On your desktop · \(active.name)" }
-        if let video = desktop.video { return "On your desktop · \(video.lastPathComponent)" }
         return "Preview a scene, then apply it to your desktop."
     }
 }
@@ -279,7 +270,7 @@ struct StatusMenu: View {
             HStack {
                 Text("Fall speed").font(.headline)
                 Spacer()
-                Text(desktop.speed, format: .percent.precision(.fractionLength(0)))
+                Text("\(desktop.speed / 0.42, format: .number.precision(.fractionLength(1)))×")
                     .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
             }
             Slider(value: $desktop.speed, in: 0.12...1.1) { Text("Fall speed") }
@@ -293,18 +284,17 @@ struct StatusMenu: View {
                     Button(scene.name) { desktop.apply(scene) }
                 }
             }
-            .disabled(desktop.importing)
             Button(desktop.motion ? "Pause Motion" : "Resume Motion") {
                 desktop.motion.toggle()
             }
             Button {
-                desktop.ploughSnow()
+                desktop.plough()
             } label: {
-                Label("Plough Snow", systemImage: "truck.box")
+                Label("Plough", systemImage: "truck.box")
             }
             .disabled(desktop.active?.id != "snow")
             Button("Clear Wallpaper") { desktop.clear() }
-                .disabled(desktop.active == nil && desktop.video == nil)
+                .disabled(desktop.active == nil)
             Divider()
             Button("Quit Driftwood") { NSApp.terminate(nil) }
         }

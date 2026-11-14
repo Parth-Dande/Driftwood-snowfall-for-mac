@@ -4,7 +4,6 @@ import CoreGraphics
 @MainActor
 final class WallpaperWindow: NSWindow {
     let displayID: CGDirectDisplayID
-    let videoController = VideoLoopController()
 
     init(screen: NSScreen) {
         displayID = screen.displayID
@@ -15,7 +14,6 @@ final class WallpaperWindow: NSWindow {
             defer: false
         )
 
-        // Sit above the still desktop picture and below Finder icons.
         level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopIconWindow)) - 1)
         collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
         ignoresMouseEvents = true
@@ -33,11 +31,9 @@ final class WallpaperWindow: NSWindow {
         view.wantsLayer = true
         view.layer?.backgroundColor = NSColor.black.cgColor
         contentView = view
-        videoController.attach(to: view)
 
         setFrame(screen.frame, display: true)
         contentView?.frame = NSRect(origin: .zero, size: screen.frame.size)
-        videoController.layout()
     }
 
     override var canBecomeKey: Bool { false }
@@ -46,6 +42,5 @@ final class WallpaperWindow: NSWindow {
     func match(screen: NSScreen) {
         setFrame(screen.frame, display: true)
         contentView?.frame = NSRect(origin: .zero, size: screen.frame.size)
-        videoController.layout()
     }
 }

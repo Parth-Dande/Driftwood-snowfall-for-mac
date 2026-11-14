@@ -3,27 +3,30 @@ import AppKit
 struct Snowball {
     var center: CGPoint
     var radius: CGFloat
-    var falling = false
-    var speed: CGFloat = 0
 }
 
 struct Snowballs {
+    static let gravity: CGFloat = 1400
+
     private(set) var placed: [Snowball] = []
     private(set) var rolling: Snowball?
     private var distance: CGFloat = 0
     private var last = CGPoint.zero
 
-    var heads: [Snowball] {
+    /// Three balls standing one on another make a snowman: the indices of its top ball and the one below.
+    var snowmen: [(head: Int, torso: Int)] {
         guard placed.count >= 3 else { return [] }
         func isOn(_ top: Snowball, _ lower: Snowball) -> Bool {
             let gap = (top.radius + lower.radius) * 0.87
-            return !top.falling && !lower.falling && abs(top.center.x - lower.center.x) < 1
-                && abs(lower.center.y - top.center.y - gap) < 1
+            return abs(top.center.x - lower.center.x) < 1 && abs(lower.center.y - top.center.y - gap) < 1
         }
-        return placed.filter { top in
-            placed.contains { body in isOn(top, body) && placed.contains { isOn(body, $0) } }
-                && !placed.contains { isOn($0, top) }
+        var found: [(head: Int, torso: Int)] = []
+        for (head, top) in placed.enumerated() where !placed.contains(where: { isOn($0, top) }) {
+            guard let torso = placed.firstIndex(where: { isOn(top, $0) }),
+                  placed.contains(where: { isOn(placed[torso], $0) }) else { continue }
+            found.append((head, torso))
         }
+        return found
     }
 
     mutating func begin(at point: CGPoint) {
@@ -40,47 +43,47 @@ struct Snowballs {
         rolling?.radius = min(29, 5 + distance * 0.075)
     }
 
-    mutating func release(at point: CGPoint, size: CGSize) {
-        drag(to: point)
+    /// Takes the rolled ball out of the hand to be thrown, if it is big enough to count as one.
+    mutating func throwBall() -> Snowball? {
         defer { rolling = nil }
-        guard var ball = rolling, distance > 22 else { return }
-        ball.center.x = min(max(ball.radius, point.x), size.width - ball.radius)
-        ball.center.y = max(ball.radius, point.y)
-        ball.falling = true
-        if placed.count >= 36 { return }
-        placed.append(ball)
+        return distance > 22 ? rolling : nil
     }
 
-    mutating func step(dt: CGFloat, floor: CGFloat, dock: CGRect? = nil) {
-        for i in placed.indices where placed[i].falling {
-            var ball = placed[i]
-            let before = ball.center.y
-            ball.speed += 720 * dt
-            ball.center.y += ball.speed * dt
-            var landing = floor - ball.radius
-            if let dock, (dock.minX...dock.maxX).contains(ball.center.x),
-               before <= dock.minY - ball.radius + 3 {
-                landing = dock.minY - ball.radius
+    /// Lets go of the rolled ball. It comes to rest on the floor, or on a ball it was dropped over;
+    /// the result says where it was let go so the fall can be shown.
+    mutating func release(at point: CGPoint, size: CGSize, floor: CGFloat) -> (from: CGPoint, ball: Snowball)? {
+        drag(to: point)
+        defer { rolling = nil }
+        guard var ball = rolling, distance > 22, placed.count < 36 else { return nil }
+        ball.center.x = min(max(ball.radius, point.x), size.width - ball.radius)
+        ball.center.y = max(ball.radius, point.y)
+        let from = ball.center
+        var landing = floor - ball.radius
+        var stacked = false
+        for other in placed {
+            let reach = (ball.radius + other.radius) * 0.7
+            let surface = other.center.y - (ball.radius + other.radius) * 0.87
+            if abs(from.x - other.center.x) <= reach && from.y <= surface + ball.radius && surface < landing {
+                landing = surface
+                ball.center.x = other.center.x
+                stacked = true
             }
-            var centerX = ball.center.x
-            for other in placed where !other.falling {
-                let reach = min(ball.radius, other.radius) * 0.85
-                let surface = other.center.y - (ball.radius + other.radius) * 0.87
-                if abs(ball.center.x - other.center.x) <= reach && before <= surface + 6 && surface < landing {
-                    landing = surface
-                    centerX = other.center.x
+        }
+        ball.center.y = stacked ? landing : max(from.y, landing)
+        if !stacked {
+            for other in placed where abs(ball.center.y - other.center.y) < ball.radius + other.radius {
+                let gap = ball.center.x - other.center.x
+                if abs(gap) < ball.radius + other.radius {
+                    ball.center.x = other.center.x + (gap < 0 ? -1 : 1) * (ball.radius + other.radius)
                 }
             }
-            if ball.center.y >= landing {
-                ball.center = CGPoint(x: centerX, y: landing)
-                ball.falling = false
-            }
-            placed[i] = ball
+            ball.center.x = min(max(ball.radius, ball.center.x), size.width - ball.radius)
         }
+        placed.append(ball)
+        return (from, ball)
     }
 }
 
-// The pickup strip sits below normal windows, so clicks on apps stay with the app.
 @MainActor
 final class SnowPickupView: NSView {
     var onBegin: ((CGPoint) -> Void)?

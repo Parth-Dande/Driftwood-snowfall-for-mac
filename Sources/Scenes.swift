@@ -22,18 +22,91 @@ func ink(_ hex: UInt32) -> Color {
     Color(red: Double(hex >> 16) / 255, green: Double((hex >> 8) & 255) / 255, blue: Double(hex & 255) / 255)
 }
 
+/// The picture behind each scene: the bundled artwork, or one the user chose in its place.
+@MainActor
+@Observable
+final class Wallpapers {
+    static let shared = Wallpapers()
+
+    struct Failure: LocalizedError {
+        let errorDescription: String?
+    }
+
+    /// Bumped whenever a picture changes, so every view showing one redraws.
+    private(set) var revision = 0
+    @ObservationIgnored private var cache: [String: NSImage] = [:]
+
+    private static let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("Driftwood/Wallpapers", isDirectory: true)
+
+    /// The pixel size of the largest connected display. A picture at least this big stays sharp everywhere.
+    static var recommendedSize: CGSize {
+        NSScreen.screens.map(\.backingPixelSize).max { $0.width * $0.height < $1.width * $1.height }
+            ?? CGSize(width: 3840, height: 2160)
+    }
+
+    static var guidance: String {
+        let size = recommendedSize
+        return "Best: a landscape JPEG, PNG or HEIC of \(Int(size.width)) × \(Int(size.height)) pixels or larger, "
+            + "the size of your biggest display. Pictures are scaled to fill the screen, so keep anything important away from the edges."
+    }
+
+    private func customFile(for scene: Scene) -> URL? {
+        let files = (try? FileManager.default.contentsOfDirectory(at: Self.folder, includingPropertiesForKeys: nil)) ?? []
+        return files.first { $0.deletingPathExtension().lastPathComponent == scene.id }
+    }
+
+    func isCustom(_ scene: Scene) -> Bool {
+        _ = revision
+        return customFile(for: scene) != nil
+    }
+
+    func image(for scene: Scene) -> NSImage? {
+        _ = revision
+        if let cached = cache[scene.id] { return cached }
+        let url = customFile(for: scene) ?? Bundle.main.url(forResource: scene.id, withExtension: "jpg", subdirectory: "Artwork")
+        guard let url, let image = NSImage(contentsOf: url) else { return nil }
+        cache[scene.id] = image
+        return image
+    }
+
+    /// Copies the chosen picture into Driftwood's own folder and uses it for this scene from now on.
+    /// Returns a note for the user when the picture is smaller than the display it has to fill.
+    func replace(_ scene: Scene, with source: URL) throws -> String? {
+        guard let image = NSImage(contentsOf: source), let pixels = Self.pixelSize(of: image),
+              pixels.width >= 640, pixels.height >= 400 else {
+            throw Failure(errorDescription: "Driftwood couldn’t use \(source.lastPathComponent). Choose a JPEG, PNG or HEIC picture at least 640 × 400 pixels.")
+        }
+        try FileManager.default.createDirectory(at: Self.folder, withIntermediateDirectories: true)
+        if let old = customFile(for: scene) { try FileManager.default.removeItem(at: old) }
+        let file = Self.folder.appendingPathComponent(scene.id).appendingPathExtension(source.pathExtension.lowercased())
+        try FileManager.default.copyItem(at: source, to: file)
+        cache[scene.id] = nil
+        revision += 1
+        let wanted = Self.recommendedSize
+        guard pixels.width < wanted.width * 0.9 || pixels.height < wanted.height * 0.9 else { return nil }
+        return "That picture is \(Int(pixels.width)) × \(Int(pixels.height)), smaller than your display, so it may look soft."
+    }
+
+    func reset(_ scene: Scene) {
+        guard let file = customFile(for: scene) else { return }
+        try? FileManager.default.removeItem(at: file)
+        cache[scene.id] = nil
+        revision += 1
+    }
+
+    private static func pixelSize(of image: NSImage) -> CGSize? {
+        let sizes = image.representations.map { CGSize(width: $0.pixelsWide, height: $0.pixelsHigh) }
+        return sizes.max { $0.width * $0.height < $1.width * $1.height }
+    }
+}
+
 struct SceneArtwork: View {
     let scene: Scene
 
-    private static let images: [String: NSImage] = Dictionary(uniqueKeysWithValues: Scene.catalog.compactMap { scene in
-        guard let url = Bundle.main.url(forResource: scene.id, withExtension: "jpg", subdirectory: "Artwork"),
-              let image = NSImage(contentsOf: url) else { return nil }
-        return (scene.id, image)
-    })
-
     var body: some View {
         GeometryReader { frame in
-            if let image = Self.images[scene.id] {
+            if let image = Wallpapers.shared.image(for: scene) {
                 Image(nsImage: image)
                     .resizable()
                     .scaledToFill()
