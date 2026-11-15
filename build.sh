@@ -1,4 +1,5 @@
 #!/bin/bash
+# Builds Driftwood.app as a universal binary. Usage: ./build.sh [output directory]
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -6,7 +7,8 @@ build_dir="${1:-$PWD/build}"
 mkdir -p "$build_dir"
 build_dir="$(cd "$build_dir" && pwd)"
 bundle="$build_dir/Driftwood.app"
-mkdir -p "$bundle/Contents/MacOS" "$bundle/Contents/Resources" "$build_dir/module-cache"
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
 
 # The macOS 27 SDK turns SwiftUI's @State into a macro whose compiler plugin ships with Xcode
 # but not with the Command Line Tools. Without it, build against the newest earlier SDK.
@@ -24,19 +26,21 @@ if [ -z "${DRIFTWOOD_SDK:-}" ] && state_is_macro "$sdk" && ! ls "$plugins" 2>/de
     done
 fi
 
+sources=()
+while IFS= read -r file; do sources+=("$file"); done < <(find Sources -name '*.swift' | sort)
+
 for arch in arm64 x86_64; do
     xcrun swiftc -O -parse-as-library -target "${arch}-apple-macosx14.0" \
         -sdk "$sdk" \
-        -module-cache-path "$build_dir/module-cache" \
-        Sources/*.swift -o "$build_dir/Driftwood-$arch"
+        -module-cache-path "$work/module-cache" \
+        "${sources[@]}" -o "$work/Driftwood-$arch"
 done
-xcrun lipo -create "$build_dir/Driftwood-arm64" "$build_dir/Driftwood-x86_64" \
-    -output "$bundle/Contents/MacOS/Driftwood"
-cp Info.plist "$bundle/Contents/"
-cp LICENSE LICENSE-WallFlow "$bundle/Contents/Resources/"
-rm -rf "$bundle/Contents/Resources/Artwork"
-mkdir -p "$bundle/Contents/Resources/Artwork"
-cp Artwork/*.jpg "$bundle/Contents/Resources/Artwork/"
-cp Artwork/AppIcon.icns "$bundle/Contents/Resources/"
+
+rm -rf "$bundle"
+mkdir -p "$bundle/Contents/MacOS" "$bundle/Contents/Resources/Artwork"
+xcrun lipo -create "$work/Driftwood-arm64" "$work/Driftwood-x86_64" -output "$bundle/Contents/MacOS/Driftwood"
+cp Resources/Info.plist "$bundle/Contents/"
+cp Resources/AppIcon.icns LICENSE LICENSE-WallFlow "$bundle/Contents/Resources/"
+cp Resources/Artwork/*.jpg "$bundle/Contents/Resources/Artwork/"
 codesign --force --sign - "$bundle"
 printf '%s\n' "$bundle"

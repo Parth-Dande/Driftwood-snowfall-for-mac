@@ -64,30 +64,25 @@ The build produces a universal binary and has no package dependencies. With only
 
 To start a scene straight away, pass its name: `open build/Driftwood.app --args -applyScene snow`. The names are `snow`, `rain`, `petals`, `leaves`, `fireflies` and `stars`.
 
-Run the physics checks:
-
-```sh
-mkdir -p build
-xcrun swiftc Sources/WeatherPhysics.swift Sources/Snowballs.swift Tests/WeatherPhysicsTests.swift -o build/weather-tests
-./build/weather-tests
-```
-
 ## Project layout
 
-| Path | Contents |
-| --- | --- |
-| `Sources/Driftwood.swift` | The app, gallery and menu bar item |
-| `Sources/Scenes.swift` | The six scenes, their pictures and the gallery preview |
-| `Sources/DesktopWeather.swift` | Overlay windows, window tracking and timing |
-| `Sources/WeatherLayers.swift` | Core Animation rendering of particles, drifts, plough and snowmen |
-| `Sources/WeatherPhysics.swift` | Gravity, drag, wind, collisions and snowbanks |
-| `Sources/Snowballs.swift` | Rolling, stacking and throwing snowballs |
-| `Tests/` | Physics regression tests |
-| `Artwork/` | The six wallpapers, the app icon and the artwork references |
-| `build.sh` | Builds the universal macOS app |
+```
+Sources/
+  App/         App entry point and the desktop state shared by the interface
+  Interface/   Gallery window, menu bar item and scene previews
+  Scenes/      The six scenes and the wallpaper store
+  Desktop/     Wallpaper windows and display helpers
+  Weather/     Overlay windows, window tracking, rendering, physics and sprites
+  Snow/        Rolling, stacking and throwing snowballs
+Resources/
+  Info.plist   Bundle metadata
+  AppIcon.icns App icon
+  Artwork/     The six wallpapers and their references
+build.sh       Builds the universal macOS app into build/
+```
 
 ## Credits and license
 
-KoiArt’s public wallpaper gallery and weather demo video inspired the themed wallpapers, all-displays action, and desktop weather interactions. Driftwood’s artwork, particles, interface, and name were made independently. The six bundled wallpapers were generated for Driftwood with ImageGen. See [Artwork/REFERENCES.md](Artwork/REFERENCES.md) for the visual references and prompts. The app includes no KoiArt artwork, videos, branding, or code.
+KoiArt’s public wallpaper gallery and weather demo video inspired the themed wallpapers, all-displays action, and desktop weather interactions. Driftwood’s artwork, particles, interface, and name were made independently. The six bundled wallpapers were generated for Driftwood with ImageGen. See [Resources/Artwork/REFERENCES.md](Resources/Artwork/REFERENCES.md) for the visual references and prompts. The app includes no KoiArt artwork, videos, branding, or code.
 
 Driftwood reuses the desktop window and display identification code from [WallFlow](https://github.com/ritulsingh/WallFlow/tree/b0946f519e9b8143e223ba3a9dceeca454f206a8), copyright 2026 ritulsingh, under the MIT license. The desktop window code was adapted for this app. See [LICENSE-WallFlow](LICENSE-WallFlow) for the full upstream notice. The original Driftwood portions are also available under MIT terms in [LICENSE](LICENSE).
