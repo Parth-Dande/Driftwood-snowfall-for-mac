@@ -62,9 +62,25 @@ Driftwood needs macOS 14 or later and runs on Apple silicon and Intel. The relea
 
 ## 🎬 Demo
 
-<!-- Demo recordings go here. -->
+<div align="center">
 
-*Demo recordings are on the way.*
+**Snow lands on your windows, rides along when you move them and falls when you resize them**
+
+<img src="docs/demo/snow-on-windows.gif" width="800" alt="Snow piling on windows and reacting as they are moved and resized"/>
+
+**Roll snowballs from the bottom edge and stack three for a snowman**
+
+<img src="docs/demo/snowman.gif" width="640" alt="Rolling and stacking snowballs into a snowman"/>
+
+**Send the plough through to clear the drifts**
+
+<img src="docs/demo/plough.gif" width="800" alt="A snow plough clearing the ground"/>
+
+**Six scenes: snow, rain, petals, leaves, fireflies and meteors**
+
+<img src="docs/demo/scenes.gif" width="800" alt="Switching between the six scenes"/>
+
+</div>
 
 ---
 
