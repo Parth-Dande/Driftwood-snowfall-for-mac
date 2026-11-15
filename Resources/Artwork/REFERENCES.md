@@ -2,7 +2,6 @@
 
 All six wallpapers were generated individually with the built-in ImageGen tool for Driftwood. The online references informed the lighting and seasonal atmosphere. The app bundles the new illustrations.
 
-- [KoiArt’s desktop weather demos](https://koiart.app/#effects)
 - [Thomas Kinkade Studios’ winter art gallery](https://www.thomaskinkade.com/pages/browse-winter-art)
 - [The Fitzwilliam Museum’s Snow Country exhibition](https://snowcountry.fitzmuseum.cam.ac.uk/explore/journeys-through-snow%E2%80%93mountain-and-river)
 

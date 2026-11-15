@@ -243,6 +243,6 @@ open build/Driftwood.app --args -applyScene snow   # rain, petals, leaves, firef
 
 ## 🙏 Credits and License
 
-KoiArt’s public wallpaper gallery and weather demo video inspired the themed wallpapers, all-displays action, and desktop weather interactions. Driftwood’s artwork, particles, interface, and name were made independently. The six bundled wallpapers were generated for Driftwood with ImageGen. See [Resources/Artwork/REFERENCES.md](Resources/Artwork/REFERENCES.md) for the visual references and prompts. The app includes no KoiArt artwork, videos, branding, or code.
+The six bundled wallpapers were generated for Driftwood with ImageGen. See [Resources/Artwork/REFERENCES.md](Resources/Artwork/REFERENCES.md) for the visual references and prompts.
 
 Driftwood reuses the desktop window and display identification code from [WallFlow](https://github.com/ritulsingh/WallFlow/tree/b0946f519e9b8143e223ba3a9dceeca454f206a8), copyright 2026 ritulsingh, under the MIT license. The desktop window code was adapted for this app. See [LICENSE-WallFlow](LICENSE-WallFlow) for the full upstream notice. The original Driftwood portions are also available under MIT terms in [LICENSE](LICENSE).
