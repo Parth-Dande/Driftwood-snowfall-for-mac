@@ -13,7 +13,6 @@ A lightweight menu bar app that makes it snow, rain, or drift petals, leaves, fi
 [![macOS](https://img.shields.io/badge/macOS-14.0+-blue.svg)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
 [![CPU](https://img.shields.io/badge/CPU-~0.5%25-green.svg)](#-performance)
-[![Release](https://img.shields.io/github/v/release/Parth-Dande/driftwood)](https://github.com/Parth-Dande/driftwood/releases/latest)
 ![License](https://img.shields.io/github/license/Parth-Dande/driftwood)
 
 </div>
@@ -51,12 +50,47 @@ A lightweight menu bar app that makes it snow, rain, or drift petals, leaves, fi
 
 ## 📦 Installation
 
-### Download
-1. Download **Driftwood-macOS.zip** from [Releases](https://github.com/Parth-Dande/driftwood/releases/latest)
-2. Unzip and move `Driftwood.app` to `/Applications`
-3. Open it, pick a scene and select **Apply to All Displays**
+### Paste this into your AI coding assistant
 
-Driftwood needs macOS 14 or later and runs on Apple silicon and Intel. The release is ad hoc signed; if macOS blocks it, right-click the app and choose **Open**, or [build it from source](#%EF%B8%8F-building-from-source).
+Driftwood is installed from source. Use an AI assistant that can run commands on your Mac, such as Codex or Claude Code, and paste this prompt:
+
+```text
+Install or update Driftwood on my Mac from the latest main branch of
+https://github.com/Parth-Dande/Driftwood-snowfall-for-mac.
+Please run the commands and complete the installation, rather than just
+showing me instructions.
+
+1. Check that this Mac runs macOS 14 or later and has Xcode or the Xcode
+   Command Line Tools. If the tools are missing, run xcode-select --install
+   and wait for me to finish Apple's installer before continuing.
+2. Clone the repository into ~/Developer/Driftwood if it is not already
+   there. If it exists, verify its origin is the repository above (the old
+   Parth-Dande/driftwood URL is also valid), check for local changes, fetch
+   origin, switch to main, and update with git pull --ff-only origin main.
+   Preserve local work; stop and explain any conflict or diverged history.
+3. Read the repository instructions and build script, then run ./build.sh
+   from the repository root. Wait for the build to finish successfully.
+4. Verify build/Driftwood.app with codesign --verify --deep --strict and
+   confirm its executable contains both arm64 and x86_64 with lipo.
+5. Quit any running Driftwood app before replacing it. Update the existing
+   installed copy if its location is writable. For a new installation,
+   create ~/Applications if needed and copy the built app there with ditto.
+   Request permission if the installed location requires elevated access.
+6. Open the exact installed app path and confirm Driftwood is running.
+   Tell me the installed path and source commit. I can then choose a scene
+   and select Apply to All Displays.
+
+Build locally from the checked-out source. Keep macOS security protections
+in place; do not disable Gatekeeper or remove quarantine attributes.
+```
+
+### Updating
+
+Paste the same prompt again to fetch the latest `main` and rebuild your installed app. Each update builds the current source, including changes since your last installation. An already installed app updates only when you run the prompt again.
+
+Driftwood needs macOS 14 or later and runs on Apple silicon and Intel. Building locally avoids distributing a downloaded app that has not been notarized by Apple. The app has no package dependencies. If you prefer Terminal, follow [Building from Source](#%EF%B8%8F-building-from-source).
+
+GitHub Actions builds and verifies the universal app on every push and pull request. Compiled apps stay out of Git; installation and updates build directly from source.
 
 ---
 
@@ -187,8 +221,8 @@ Most weather apps redraw every particle on every frame. Driftwood works out each
 
 ```sh
 # Clone repository
-git clone https://github.com/Parth-Dande/driftwood.git
-cd driftwood
+git clone https://github.com/Parth-Dande/Driftwood-snowfall-for-mac.git
+cd Driftwood-snowfall-for-mac
 
 # Build the universal app into build/
 ./build.sh
