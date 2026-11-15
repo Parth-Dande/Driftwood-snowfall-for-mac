@@ -131,22 +131,46 @@ final class DesktopWeather {
         }
     }
 
+    /// Called when the active Space changes. Each display can have its own Spaces, and macOS does
+    /// not say which display switched, so a display counts as changed when the set of windows on it
+    /// is different from a moment ago. Only those displays start afresh.
     private func surveyNow() {
         guard timer != nil else { return }
+        let before = windowsByDisplay()
         generation += 1
         scanInProgress = false
         dragScanInProgress = false
         geometry = Self.windowBounds()
         geometryRevision += 1
+        let after = windowsByDisplay()
         let now = ProcessInfo.processInfo.systemUptime
         lastScan = now
         lastUpkeep = now
-        for display in displays.values {
+
+        var changed = Set(screens.map(\.displayID))
+        if NSScreen.screensHaveSeparateSpaces {
+            changed = changed.filter { before[$0] != after[$0] }
+            if changed.isEmpty, let pointer = screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) }) {
+                // Two empty desktops look alike; the switch then happened where the pointer is.
+                changed = [pointer.displayID]
+            }
+        }
+        for id in changed {
+            guard let display = displays[id] else { continue }
             display.obscured = false
             display.view.restart(after: Self.returnDelay)
         }
         upkeep(now: now)
         applyGeometry(now: now)
+    }
+
+    private func windowsByDisplay() -> [CGDirectDisplayID: Set<UInt32>] {
+        var result: [CGDirectDisplayID: Set<UInt32>] = [:]
+        for screen in screens {
+            let frame = screen.quartzFrame
+            result[screen.displayID] = Set(geometry.filter { $0.layer == 0 && $0.rect.intersects(frame) }.map(\.id))
+        }
+        return result
     }
 
     func stop() {
