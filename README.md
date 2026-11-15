@@ -74,7 +74,9 @@ showing me instructions.
    confirm its executable contains both arm64 and x86_64 with lipo.
 5. Quit any running Driftwood app before replacing it. Update the existing
    installed copy if its location is writable. For a new installation,
-   create ~/Applications if needed and copy the built app there with ditto.
+   create ~/Applications if needed. Use ditto to copy the freshly built app
+   to a new bundle, then replace the old bundle rather than merging into it.
+   Keep the previous app as a backup until the new copy opens successfully.
    Request permission if the installed location requires elevated access.
 6. Open the exact installed app path and confirm Driftwood is running.
    Tell me the installed path and source commit. I can then choose a scene
