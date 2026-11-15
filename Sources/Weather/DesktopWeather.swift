@@ -279,8 +279,8 @@ final class DesktopWeather {
             guard let display = displays[screen.displayID], !display.view.isPaused,
                   display.geometryRevision != geometryRevision else { continue }
             display.geometryRevision = geometryRevision
-            let ledges = ledges(on: screen)
-            display.view.update(surfaces: ledges, masks: ledges.map(\.rect),
+            let surfaces = surfaces(on: screen)
+            display.view.update(surfaces: surfaces, masks: surfaces.map(\.rect),
                                 elapsed: display.lastGeometry == 0 ? 1 : now - display.lastGeometry)
             display.lastGeometry = now
         }
@@ -323,11 +323,13 @@ final class DesktopWeather {
         }
     }
 
-    private func ledges(on screen: NSScreen) -> [WeatherSurface] {
+    /// Includes windows whose top edge is offscreen: they still hide weather behind their contents.
+    /// `WeatherPhysics` separately decides which top edges can catch particles.
+    private func surfaces(on screen: NSScreen) -> [WeatherSurface] {
         let frame = screen.quartzFrame
         return geometry.compactMap { window -> WeatherSurface? in
             let localFrame = window.rect.offsetBy(dx: -frame.minX, dy: -frame.minY)
-            guard window.rect.intersects(frame), localFrame.minY >= 18 else { return nil }
+            guard window.rect.intersects(frame) else { return nil }
             let nearEdge = localFrame.minX < 65 || localFrame.maxX > frame.width - 65
             let thumbnail = nearEdge && localFrame.width < min(235, frame.width * 0.23)
                 && localFrame.height < frame.height * 0.52
