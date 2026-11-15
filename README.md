@@ -92,7 +92,7 @@ Paste the same prompt again to fetch the latest `main` and rebuild your installe
 
 Driftwood needs macOS 14 or later and runs on Apple silicon and Intel. Building locally avoids distributing a downloaded app that has not been notarized by Apple. The app has no package dependencies. If you prefer Terminal, follow [Building from Source](#%EF%B8%8F-building-from-source).
 
-GitHub Actions builds and verifies the universal app on every push and pull request. Compiled apps stay out of Git; installation and updates build directly from source.
+Compiled apps stay out of Git; installation and updates build directly from source.
 
 ---
 
