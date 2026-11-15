@@ -4,11 +4,11 @@ import AppKit
 @MainActor
 final class SnowPickupView: NSView {
     /// Called with the pointer's screen position when a drag starts.
-    var onBegin: ((CGPoint) -> Void)?
+    var onBegin: ((_ screenPosition: CGPoint) -> Void)?
     /// Called with the pointer's screen position as the drag moves.
-    var onDrag: ((CGPoint) -> Void)?
+    var onDrag: ((_ screenPosition: CGPoint) -> Void)?
     /// Called with the pointer's screen position when the drag ends.
-    var onRelease: ((CGPoint) -> Void)?
+    var onRelease: ((_ screenPosition: CGPoint) -> Void)?
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 

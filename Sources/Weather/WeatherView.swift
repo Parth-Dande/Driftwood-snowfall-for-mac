@@ -123,8 +123,8 @@ final class WeatherView: NSView {
             let lean = bounds.height * 0.213
             rain.emitterPosition = CGPoint(x: bounds.midX + lean / 2, y: -40)
             rain.emitterSize = CGSize(width: bounds.width + lean + 40, height: 1)
-            rain.emitterCells = [rainCell(pace: 760, perSecond: 110, size: 0.6, alpha: 0.55),
-                                 rainCell(pace: 1040, perSecond: 34, size: 0.95, alpha: 0.85)]
+            rain.emitterCells = [makeRainCell(pace: 760, perSecond: 110, size: 0.6, alpha: 0.55),
+                                 makeRainCell(pace: 1040, perSecond: 34, size: 0.95, alpha: 0.85)]
             rain.birthRate = Float(scale)
         }
         CATransaction.commit()
@@ -872,7 +872,7 @@ final class WeatherView: NSView {
         CATransaction.commit()
     }
 
-    private func ballLayer(_ ball: Snowball) -> CALayer {
+    private func addBallLayer(for ball: Snowball) -> CALayer {
         let layer = CALayer()
         layer.contents = Sprite.snowball
         layer.bounds = CGRect(x: 0, y: 0, width: ball.radius * 2, height: ball.radius * 2)
@@ -909,7 +909,7 @@ final class WeatherView: NSView {
         guard let ball = snowballs.rollingBall else { return }
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        let layer = rollingLayer ?? ballLayer(ball)
+        let layer = rollingLayer ?? addBallLayer(for: ball)
         rollingLayer = layer
         layer.bounds = CGRect(x: 0, y: 0, width: ball.radius * 2, height: ball.radius * 2)
         layer.position = ball.center
@@ -945,7 +945,7 @@ final class WeatherView: NSView {
         CATransaction.setDisableActions(true)
         rollingLayer?.removeFromSuperlayer()
         rollingLayer = nil
-        let layer = ballLayer(ball)
+        let layer = addBallLayer(for: ball)
         let arc = CAKeyframeAnimation(keyPath: "position")
         arc.values = points.map { NSValue(point: $0) }
         arc.calculationMode = .cubic
@@ -984,7 +984,7 @@ final class WeatherView: NSView {
         rollingLayer?.removeFromSuperlayer()
         rollingLayer = nil
         if let dropped {
-            let layer = ballLayer(dropped.ball)
+            let layer = addBallLayer(for: dropped.ball)
             ballLayers.append(layer)
             let stretch = CGFloat(max(0.05, rate))
             let rise = dropped.ball.center.y - dropped.from.y
@@ -1028,7 +1028,7 @@ final class WeatherView: NSView {
         return emitter
     }
 
-    private func rainCell(pace: CGFloat, perSecond: Float, size: CGFloat, alpha: CGFloat) -> CAEmitterCell {
+    private func makeRainCell(pace: CGFloat, perSecond: Float, size: CGFloat, alpha: CGFloat) -> CAEmitterCell {
         let cell = CAEmitterCell()
         cell.contents = Sprite.rain
         cell.contentsScale = 4

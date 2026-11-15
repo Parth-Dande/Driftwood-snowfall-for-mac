@@ -21,12 +21,16 @@ final class Wallpapers {
         .appendingPathComponent("Driftwood/Wallpapers", isDirectory: true)
 
     /// The pixel size of the largest connected display. A picture at least this big stays sharp everywhere.
+    ///
+    /// - Complexity: O(n), where n is the number of connected displays.
     static var recommendedSize: CGSize {
         NSScreen.screens.map(\.backingPixelSize).max { $0.width * $0.height < $1.width * $1.height }
             ?? CGSize(width: 3840, height: 2160)
     }
 
     /// Advice on choosing a picture that will look good, for the open panel and tooltips.
+    ///
+    /// - Complexity: O(n), where n is the number of connected displays.
     static var guidance: String {
         let size = recommendedSize
         return "Best: a landscape JPEG, PNG or HEIC of \(Int(size.width)) × \(Int(size.height)) pixels or larger, "

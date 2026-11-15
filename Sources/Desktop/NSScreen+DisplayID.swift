@@ -9,6 +9,8 @@ extension NSScreen {
     }
 
     /// Screen frame in Quartz coordinates (origin at the top-left of the primary display).
+    ///
+    /// - Complexity: O(n), where n is the number of connected displays.
     var quartzFrame: CGRect {
         let primary = NSScreen.screens.first(where: { $0.frame.origin == .zero }) ?? NSScreen.main
         let primaryHeight = primary?.frame.height ?? frame.height

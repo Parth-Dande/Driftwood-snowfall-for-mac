@@ -24,14 +24,14 @@ enum Sprite {
         CGColor(srgbRed: r, green: g, blue: b, alpha: a)
     }
 
-    private static func radial(_ context: CGContext, center: CGPoint, radius: CGFloat, stops: [(CGFloat, CGColor)]) {
+    private static func drawRadialGradient(in context: CGContext, center: CGPoint, radius: CGFloat, stops: [(CGFloat, CGColor)]) {
         let gradient = CGGradient(colorsSpace: nil, colors: stops.map(\.1) as CFArray, locations: stops.map(\.0))!
         context.drawRadialGradient(gradient, startCenter: center, startRadius: 0, endCenter: center, endRadius: radius, options: [])
     }
 
     private static func dot(_ key: String, _ r: CGFloat, _ g: CGFloat, _ b: CGFloat, core: CGFloat) -> CGImage {
         image(key, width: 16, height: 16) { context in
-            radial(context, center: CGPoint(x: 8, y: 8), radius: 8,
+            drawRadialGradient(in: context, center: CGPoint(x: 8, y: 8), radius: 8,
                    stops: [(0, color(r, g, b)), (core, color(r, g, b)), (1, color(r, g, b, 0))])
         }
     }
@@ -46,7 +46,7 @@ enum Sprite {
     /// A firefly: a bright core in a wide halo.
     static var glow: CGImage {
         image("glow", width: 36, height: 36) { context in
-            radial(context, center: CGPoint(x: 18, y: 18), radius: 18,
+            drawRadialGradient(in: context, center: CGPoint(x: 18, y: 18), radius: 18,
                    stops: [(0, color(0.98, 1, 0.8)), (0.13, color(0.9, 1, 0.45)), (0.24, color(0.85, 1, 0.36, 0.5)),
                            (0.55, color(0.85, 1, 0.36, 0.14)), (1, color(0.85, 1, 0.36, 0))])
         }
@@ -152,7 +152,7 @@ enum Sprite {
             context.clip()
             context.setFillColor(color(0.72, 0.85, 1))
             context.fill(box)
-            radial(context, center: CGPoint(x: 13, y: 12.2), radius: 12,
+            drawRadialGradient(in: context, center: CGPoint(x: 13, y: 12.2), radius: 12,
                    stops: [(0, color(0.99, 0.99, 1, 0.95)), (0.1, color(0.99, 0.99, 1, 0.95)), (1, color(0.99, 0.99, 1, 0))])
         }
     }

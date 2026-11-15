@@ -21,6 +21,8 @@ struct Snowballs {
     private var last = CGPoint.zero
 
     /// Three balls standing one on another make a snowman: the indices of its top ball and the one below.
+    ///
+    /// - Complexity: O(n²), where n is the number of placed balls.
     var snowmen: [(head: Int, torso: Int)] {
         guard placedBalls.count >= 3 else { return [] }
         func isOn(_ top: Snowball, _ lower: Snowball) -> Bool {

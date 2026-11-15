@@ -17,8 +17,8 @@ final class DesktopWeather {
         let id: UInt32
         let rect: CGRect
         let layer: Int
-        let dock: Bool
-        let stage: Bool
+        let isDock: Bool
+        let isStageManagerWindow: Bool
     }
 
     private final class DisplayWeather {
@@ -107,7 +107,7 @@ final class DesktopWeather {
                 panel.contentView = view
                 panel.setFrame(screen.frame, display: false)
                 let display = DisplayWeather(panel: panel, view: view)
-                if kind == .snow { display.pickup = snowPickup(on: screen, view: view) }
+                if kind == .snow { display.pickup = makeSnowPickup(on: screen, view: view) }
                 displays[screen.displayID] = display
             }
             mouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .leftMouseUp]) { [weak self] event in
@@ -298,7 +298,7 @@ final class DesktopWeather {
         for screen in screens {
             let frame = screen.quartzFrame
             let covered = geometry.contains {
-                $0.layer == 0 && !$0.stage && abs($0.rect.minX - frame.minX) <= 8 && abs($0.rect.minY - frame.minY) <= 8
+                $0.layer == 0 && !$0.isStageManagerWindow && abs($0.rect.minX - frame.minX) <= 8 && abs($0.rect.minY - frame.minY) <= 8
                     && abs($0.rect.width - frame.width) <= 8 && abs($0.rect.height - frame.height) <= 8
             }
             let visible = !covered && CGDisplayIsAsleep(screen.displayID) == 0
@@ -331,7 +331,7 @@ final class DesktopWeather {
             let nearEdge = localFrame.minX < 65 || localFrame.maxX > frame.width - 65
             let thumbnail = nearEdge && localFrame.width < min(235, frame.width * 0.23)
                 && localFrame.height < frame.height * 0.52
-            guard !window.stage, !window.dock, !thumbnail else { return nil }
+            guard !window.isStageManagerWindow, !window.isDock, !thumbnail else { return nil }
             return WeatherSurface(id: window.id, rect: localFrame)
         }
     }
@@ -339,7 +339,7 @@ final class DesktopWeather {
     private func window(under mouse: CGPoint) -> UInt32? {
         guard let height = NSScreen.screens.first?.frame.height else { return nil }
         let point = CGPoint(x: mouse.x, y: height - mouse.y)
-        return geometry.first { $0.layer == 0 && !$0.stage && $0.rect.insetBy(dx: -10, dy: -10).contains(point) }?.id
+        return geometry.first { $0.layer == 0 && !$0.isStageManagerWindow && $0.rect.insetBy(dx: -10, dy: -10).contains(point) }?.id
     }
 
     private func follow(_ id: UInt32, mouse: CGPoint) {
@@ -368,7 +368,7 @@ final class DesktopWeather {
     private func place(_ id: UInt32, at rect: CGRect, now: Double) {
         guard let index = geometry.firstIndex(where: { $0.id == id }), geometry[index].rect != rect else { return }
         let old = geometry[index]
-        geometry[index] = WindowBounds(id: id, rect: rect, layer: old.layer, dock: old.dock, stage: old.stage)
+        geometry[index] = WindowBounds(id: id, rect: rect, layer: old.layer, isDock: old.isDock, isStageManagerWindow: old.isStageManagerWindow)
         geometryRevision += 1
         applyGeometry(now: now)
     }
@@ -391,7 +391,7 @@ final class DesktopWeather {
         }
     }
 
-    private func snowPickup(on screen: NSScreen, view: WeatherView) -> WeatherPanel {
+    private func makeSnowPickup(on screen: NSScreen, view: WeatherView) -> WeatherPanel {
         let frame = CGRect(x: screen.frame.minX, y: screen.frame.minY, width: screen.frame.width, height: 28)
         let panel = WeatherPanel(contentRect: frame, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.level = NSWindow.Level(rawValue: NSWindow.Level.normal.rawValue - 1)
@@ -426,11 +426,11 @@ final class DesktopWeather {
         else { return nil }
         let owner = item[kCGWindowOwnerName as String] as? String
         let systemDock = owner == "Dock"
-        let stage = owner == "WindowManager"
+        let isStageManagerWindow = owner == "WindowManager"
             || (systemDock && w <= 300 && h >= 45 && h <= 350 && layer != dockLevel)
-        let dock = systemDock && layer == dockLevel
-        guard stage || dock || (layer == 0 && !systemDock) else { return nil }
+        let isDock = systemDock && layer == dockLevel
+        guard isStageManagerWindow || isDock || (layer == 0 && !systemDock) else { return nil }
         return WindowBounds(id: id, rect: CGRect(x: x, y: y, width: w, height: h), layer: layer,
-                            dock: dock, stage: stage)
+                            isDock: isDock, isStageManagerWindow: isStageManagerWindow)
     }
 }
