@@ -2,6 +2,7 @@ import AppKit
 import CoreGraphics
 
 extension NSScreen {
+    /// The Core Graphics identifier of this screen's display.
     var displayID: CGDirectDisplayID {
         let key = NSDeviceDescriptionKey("NSScreenNumber")
         return deviceDescription[key] as? CGDirectDisplayID ?? 0
@@ -19,6 +20,7 @@ extension NSScreen {
         )
     }
 
+    /// The screen's size in device pixels.
     var backingPixelSize: CGSize {
         CGSize(width: frame.width * backingScaleFactor, height: frame.height * backingScaleFactor)
     }

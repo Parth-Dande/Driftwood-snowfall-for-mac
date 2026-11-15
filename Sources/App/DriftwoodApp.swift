@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 
+/// The app: a gallery window and a menu bar item sharing one `Desktop`.
 @main
 struct DriftwoodApp: App {
     @State private var desktop = Desktop()

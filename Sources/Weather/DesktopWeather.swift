@@ -3,12 +3,14 @@ import CoreGraphics
 import IOKit.ps
 import QuartzCore
 
+/// A panel that never takes keyboard focus, used for the weather overlay.
 @MainActor
 final class WeatherPanel: NSPanel {
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
 }
 
+/// Runs the weather on every display: creates the overlays, tracks windows and the pointer, and paces the work.
 @MainActor
 final class DesktopWeather {
     private struct WindowBounds: Sendable {
@@ -66,9 +68,12 @@ final class DesktopWeather {
     private var powerFactor = 1.0
     private var screens: [NSScreen] = []
     private var followsPointer = false
+    /// How much weather falls.
     var density = 0.65
-    var speed = 0.48
-    var motion = true
+    /// How fast weather time runs; `0.42` is natural speed.
+    var fallSpeed = 0.48
+    /// Whether the weather is animating.
+    var isMotionEnabled = true
     private var spaceObserver: NSObjectProtocol?
     private var appObservers: [NSObjectProtocol] = []
     /// Until this time, survey the windows every tick: something is probably opening or closing.
@@ -77,13 +82,14 @@ final class DesktopWeather {
     /// How long the sky stays empty after a display comes back into view.
     private static let returnDelay = 3.0
 
-    func configure(effect: String?, screens: [NSScreen]) {
+    /// Starts `kind` of weather on each of `screens`, replacing whatever was running.
+    func start(_ kind: WeatherKind, on screens: [NSScreen]) {
         stop()
         self.screens = screens
         lastScan = 0
         lastPower = 0
         lastUpkeep = 0
-        if let effect, let kind = WeatherKind(rawValue: effect) {
+        do {
             followsPointer = kind == .leaves || kind == .snow
             for screen in screens {
                 let view = WeatherView(kind: kind)
@@ -173,6 +179,7 @@ final class DesktopWeather {
         return result
     }
 
+    /// Stops the weather and closes its overlays.
     func stop() {
         generation += 1
         geometry = []
@@ -192,12 +199,13 @@ final class DesktopWeather {
         displays.removeAll()
     }
 
-    func plough() {
-        for display in displays.values { display.view.plough() }
+    /// Sends a plough across each display.
+    func sendPlough() {
+        for display in displays.values { display.view.sendPlough() }
     }
 
     /// Applies a changed setting now instead of at the next upkeep.
-    func refresh() {
+    func applySettings() {
         lastUpkeep = 0
         tick()
     }
@@ -255,9 +263,9 @@ final class DesktopWeather {
         }
         applyGeometry(now: now)
         for screen in screens {
-            guard let display = displays[screen.displayID], !display.view.paused else { continue }
+            guard let display = displays[screen.displayID], !display.view.isPaused else { continue }
             if !held {
-                display.view.pointer(at: CGPoint(x: mouse.x - screen.frame.minX, y: screen.frame.maxY - mouse.y),
+                display.view.pointerMoved(to: CGPoint(x: mouse.x - screen.frame.minX, y: screen.frame.maxY - mouse.y),
                                      velocity: velocity, elapsed: elapsed)
             }
             display.view.advance()
@@ -268,7 +276,7 @@ final class DesktopWeather {
 
     private func applyGeometry(now: Double) {
         for screen in screens {
-            guard let display = displays[screen.displayID], !display.view.paused,
+            guard let display = displays[screen.displayID], !display.view.isPaused,
                   display.geometryRevision != geometryRevision else { continue }
             display.geometryRevision = geometryRevision
             let ledges = ledges(on: screen)
@@ -296,10 +304,10 @@ final class DesktopWeather {
             let visible = !covered && CGDisplayIsAsleep(screen.displayID) == 0
             guard let display = displays[screen.displayID] else { continue }
             display.view.density = density * powerFactor
-            display.view.timeScale = speed / 0.42
+            display.view.timeScale = fallSpeed / 0.42
             if !visible { display.obscured = true }
-            guard visible && motion else {
-                display.view.paused = true
+            guard visible && isMotionEnabled else {
+                display.view.isPaused = true
                 if display.panel.isVisible { display.panel.orderOut(nil); display.pickup?.orderOut(nil) }
                 continue
             }
@@ -311,7 +319,7 @@ final class DesktopWeather {
                 display.obscured = false
                 display.view.restart(after: Self.returnDelay)
             }
-            display.view.paused = false
+            display.view.isPaused = false
         }
     }
 
@@ -396,8 +404,8 @@ final class DesktopWeather {
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
         let pickup = SnowPickupView(frame: CGRect(origin: .zero, size: frame.size))
         let local: (CGPoint) -> CGPoint = { CGPoint(x: $0.x - screen.frame.minX, y: screen.frame.maxY - $0.y) }
-        pickup.onBegin = { [weak view] point in view?.beginBall(at: local(point)) }
-        pickup.onDrag = { [weak view] point in view?.dragBall(to: local(point)) }
+        pickup.onBegin = { [weak view] point in view?.beginRollingBall(at: local(point)) }
+        pickup.onDrag = { [weak view] point in view?.rollBall(to: local(point)) }
         pickup.onRelease = { [weak view] point in view?.releaseBall(at: local(point)) }
         panel.contentView = pickup
         return panel

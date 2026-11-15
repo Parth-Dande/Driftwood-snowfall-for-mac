@@ -5,9 +5,11 @@ import SwiftUI
 @MainActor
 @Observable
 final class Wallpapers {
+    /// The store every view reads its pictures from.
     static let shared = Wallpapers()
 
-    struct Failure: LocalizedError {
+    /// A reason a chosen picture could not be used.
+    struct ImportError: LocalizedError {
         let errorDescription: String?
     }
 
@@ -15,7 +17,7 @@ final class Wallpapers {
     private(set) var revision = 0
     @ObservationIgnored private var cache: [String: NSImage] = [:]
 
-    private static let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+    private static let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("Driftwood/Wallpapers", isDirectory: true)
 
     /// The pixel size of the largest connected display. A picture at least this big stays sharp everywhere.
@@ -24,6 +26,7 @@ final class Wallpapers {
             ?? CGSize(width: 3840, height: 2160)
     }
 
+    /// Advice on choosing a picture that will look good, for the open panel and tooltips.
     static var guidance: String {
         let size = recommendedSize
         return "Best: a landscape JPEG, PNG or HEIC of \(Int(size.width)) × \(Int(size.height)) pixels or larger, "
@@ -31,15 +34,17 @@ final class Wallpapers {
     }
 
     private func customFile(for scene: Scene) -> URL? {
-        let files = (try? FileManager.default.contentsOfDirectory(at: Self.folder, includingPropertiesForKeys: nil)) ?? []
+        let files = (try? FileManager.default.contentsOfDirectory(at: Self.directory, includingPropertiesForKeys: nil)) ?? []
         return files.first { $0.deletingPathExtension().lastPathComponent == scene.id }
     }
 
-    func isCustom(_ scene: Scene) -> Bool {
+    /// Whether the user has replaced the bundled picture for `scene`.
+    func hasCustomImage(for scene: Scene) -> Bool {
         _ = revision
         return customFile(for: scene) != nil
     }
 
+    /// The picture to show for `scene`: the user's own if there is one, otherwise the bundled artwork.
     func image(for scene: Scene) -> NSImage? {
         _ = revision
         if let cached = cache[scene.id] { return cached }
@@ -49,16 +54,16 @@ final class Wallpapers {
         return image
     }
 
-    /// Copies the chosen picture into Driftwood's own folder and uses it for this scene from now on.
+    /// Copies the chosen picture into Driftwood's own directory and uses it for this scene from now on.
     /// Returns a note for the user when the picture is smaller than the display it has to fill.
-    func replace(_ scene: Scene, with source: URL) throws -> String? {
+    func setCustomImage(from source: URL, for scene: Scene) throws -> String? {
         guard let image = NSImage(contentsOf: source), let pixels = Self.pixelSize(of: image),
               pixels.width >= 640, pixels.height >= 400 else {
-            throw Failure(errorDescription: "Driftwood couldn’t use \(source.lastPathComponent). Choose a JPEG, PNG or HEIC picture at least 640 × 400 pixels.")
+            throw ImportError(errorDescription: "Driftwood couldn’t use \(source.lastPathComponent). Choose a JPEG, PNG or HEIC picture at least 640 × 400 pixels.")
         }
-        try FileManager.default.createDirectory(at: Self.folder, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: Self.directory, withIntermediateDirectories: true)
         if let old = customFile(for: scene) { try FileManager.default.removeItem(at: old) }
-        let file = Self.folder.appendingPathComponent(scene.id).appendingPathExtension(source.pathExtension.lowercased())
+        let file = Self.directory.appendingPathComponent(scene.id).appendingPathExtension(source.pathExtension.lowercased())
         try FileManager.default.copyItem(at: source, to: file)
         cache[scene.id] = nil
         revision += 1
@@ -67,7 +72,8 @@ final class Wallpapers {
         return "That picture is \(Int(pixels.width)) × \(Int(pixels.height)), smaller than your display, so it may look soft."
     }
 
-    func reset(_ scene: Scene) {
+    /// Deletes the user's picture for `scene`, bringing the bundled artwork back.
+    func removeCustomImage(for scene: Scene) {
         guard let file = customFile(for: scene) else { return }
         try? FileManager.default.removeItem(at: file)
         cache[scene.id] = nil

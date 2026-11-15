@@ -1,10 +1,13 @@
 import AppKit
 import CoreGraphics
 
+/// A borderless window that sits behind the desktop icons and shows a scene's picture.
 @MainActor
 final class WallpaperWindow: NSWindow {
+    /// The display this window covers.
     let displayID: CGDirectDisplayID
 
+    /// Creates a wallpaper window covering `screen`.
     init(screen: NSScreen) {
         displayID = screen.displayID
         super.init(
@@ -39,7 +42,8 @@ final class WallpaperWindow: NSWindow {
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
 
-    func match(screen: NSScreen) {
+    /// Resizes the window to cover `screen` after its arrangement or resolution changes.
+    func fit(to screen: NSScreen) {
         setFrame(screen.frame, display: true)
         contentView?.frame = NSRect(origin: .zero, size: screen.frame.size)
     }

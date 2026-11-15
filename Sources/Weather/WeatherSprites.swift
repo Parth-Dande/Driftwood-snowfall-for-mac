@@ -36,10 +36,14 @@ enum Sprite {
         }
     }
 
+    /// A soft white dot for snowflakes and clumps.
     static var snow: CGImage { dot("snow", 0.96, 0.98, 1, core: 0.5) }
+    /// A pale blue dot for rain splashes.
     static var droplet: CGImage { dot("droplet", 0.78, 0.92, 1, core: 0.55) }
+    /// A lilac dot for meteor sparks.
     static var ember: CGImage { dot("ember", 0.95, 0.84, 1, core: 0.3) }
 
+    /// A firefly: a bright core in a wide halo.
     static var glow: CGImage {
         image("glow", width: 36, height: 36) { context in
             radial(context, center: CGPoint(x: 18, y: 18), radius: 18,
@@ -48,7 +52,8 @@ enum Sprite {
         }
     }
 
-    static func leaf(_ variant: Int) -> CGImage {
+    /// An autumn leaf in one of four colours.
+    static func leaf(variant: Int) -> CGImage {
         let tints: [(CGFloat, CGFloat, CGFloat)] = [(1, 0.59, 0.23), (0.93, 0.42, 0.16), (0.98, 0.74, 0.27), (0.80, 0.30, 0.14)]
         let (r, g, b) = tints[variant % tints.count]
         return image("leaf\(variant)", width: 27, height: 15.5) { context in
@@ -77,7 +82,8 @@ enum Sprite {
         }
     }
 
-    static func petal(_ variant: Int) -> CGImage {
+    /// A cherry petal in one of three shades.
+    static func petal(variant: Int) -> CGImage {
         let tints: [(CGFloat, CGFloat, CGFloat)] = [(1, 0.57, 0.72), (1, 0.72, 0.82), (0.98, 0.47, 0.66)]
         let (r, g, b) = tints[variant % tints.count]
         return image("petal\(variant)", width: 24, height: 18) { context in
@@ -138,6 +144,7 @@ enum Sprite {
         }
     }
 
+    /// A snowball with a highlight.
     static var snowball: CGImage {
         image("snowball", width: 32, height: 32) { context in
             let box = CGRect(x: 0.5, y: 0.5, width: 31, height: 31)
@@ -220,6 +227,7 @@ enum Sprite {
         }
     }
 
+    /// The snow plough.
     static var truck: CGImage {
         image("truck", width: 60, height: 36) { context in
             context.scaleBy(x: 1.5, y: 1.5)

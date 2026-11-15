@@ -17,7 +17,7 @@ final class WeatherView: NSView {
         var born: CGFloat
         var expires: CGFloat
         var alpha: Float
-        var foreground = false
+        var isForeground = false
         var releasedFrom: UInt32?
         var restingOn: UInt32?
         var settled = false
@@ -25,19 +25,24 @@ final class WeatherView: NSView {
         var heavy = false
     }
 
+    /// The kind of weather this view shows.
     let kind: WeatherKind
+    /// The physical model behind what is drawn.
     private(set) var physics: WeatherPhysics
+    /// The snowballs on this display.
     private(set) var snowballs = Snowballs()
 
+    /// How much weather falls.
     var density: CGFloat = 0.65 {
         didSet { if density != oldValue { rain?.birthRate = Float(scale) } }
     }
     /// How fast weather time runs against the clock. Everything inside `stage` follows it.
     var timeScale: Double = 1 {
-        didSet { if timeScale != oldValue, !paused { setRate(timeScale) } }
+        didSet { if timeScale != oldValue, !isPaused { setRate(timeScale) } }
     }
-    var paused = true {
-        didSet { if paused != oldValue { setRate(paused ? 0 : timeScale) } }
+    /// Whether weather time is stopped. A new view starts paused.
+    var isPaused = true {
+        didSet { if isPaused != oldValue { setRate(isPaused ? 0 : timeScale) } }
     }
 
     private let stage = CALayer()
@@ -84,6 +89,7 @@ final class WeatherView: NSView {
     private static let fadeTime: CGFloat = 1.5
     private static let snowRestTime: CGFloat = 2.6
 
+    /// Creates a view showing `kind` of weather.
     init(kind: WeatherKind) {
         self.kind = kind
         physics = WeatherPhysics(kind: kind)
@@ -124,7 +130,7 @@ final class WeatherView: NSView {
         CATransaction.commit()
     }
 
-    /// Weather time, in seconds. It stops while paused and stretches with the speed slider.
+    /// Weather time, in seconds. It stops while isPaused and stretches with the speed slider.
     var now: CGFloat { CGFloat(simAnchor + (CACurrentMediaTime() - wallAnchor) * rate) }
 
     private func setRate(_ next: Double) {
@@ -169,7 +175,7 @@ final class WeatherView: NSView {
     /// Called a few times a second. Launches newcomers, lets landings take effect and recycles
     /// what has finished. Nothing here moves a particle: that already belongs to the compositor.
     func advance() {
-        guard !paused, bounds.width > 0, bounds.height > 0 else { return }
+        guard !isPaused, bounds.width > 0, bounds.height > 0 else { return }
         if geometryStale { update(surfaces: surfaces, masks: masks, elapsed: 1) }
         let wall = CACurrentMediaTime()
         guard wall >= holdUntil, wall - lastAdvanceWall >= 0.45 || !seeded else { return }
@@ -238,7 +244,7 @@ final class WeatherView: NSView {
         splashBudget += elapsed * 26 * scale
         while splashBudget >= 1 {
             splashBudget -= 1
-            guard particles.count < 420, let point = physics.splashPoint() else { continue }
+            guard particles.count < 420, let point = physics.randomSplashPoint() else { continue }
             addSplash(at: point, time: time + .random(in: 0...elapsed))
         }
         if time >= nextFlash {
@@ -255,17 +261,17 @@ final class WeatherView: NSView {
         var index = 0
         while index < particles.count {
             var particle = particles[index]
-            if !particle.settled, particle.flight.landing != nil {
-                if kind == .snow, particle.look == .faller, particle.flight.end <= time {
+            if !particle.settled, particle.flight.landingSurfaceID != nil {
+                if kind == .snow, particle.look == .faller, particle.flight.endTime <= time {
                     particle.settled = true
-                    if particle.flight.landing != 0 || particle.flight.endPoint.x > (bladeX(at: time) ?? -.infinity) {
-                        physics.deposit(on: particle.flight.landing!, at: particle.flight.endPoint.x,
+                    if particle.flight.landingSurfaceID != 0 || particle.flight.endPoint.x > (bladeX(at: time) ?? -.infinity) {
+                        physics.depositSnow(on: particle.flight.landingSurfaceID!, at: particle.flight.endPoint.x,
                                         radius: particle.body.radius * (particle.heavy ? 2.5 : 1))
                         banksDirty = true
                     }
-                } else if particle.look == .meteor, particle.flight.end <= time + horizon {
+                } else if particle.look == .meteor, particle.flight.endTime <= time + horizon {
                     particle.settled = true
-                    for _ in 0..<10 { addSpark(at: particle.flight.endPoint, time: particle.flight.end, rain: false) }
+                    for _ in 0..<10 { addSpark(at: particle.flight.endPoint, time: particle.flight.endTime, rain: false) }
                 }
                 particles[index].settled = particle.settled
             }
@@ -299,20 +305,20 @@ final class WeatherView: NSView {
     }
 
     private func addFaller(at time: CGFloat, age: CGFloat) {
-        let foreground = kind == .snow && Int.random(in: 0..<4) == 0
-        let body = physics.body(foreground: foreground, density: density)
-        let start = time - age * (bounds.height + 40) / body.terminal
+        let isForeground = kind == .snow && Int.random(in: 0..<4) == 0
+        let body = physics.makeBody(isForeground: isForeground, density: density)
+        let start = time - age * (bounds.height + 40) / body.terminalSpeed
         let origin = CGPoint(x: .random(in: -50...(bounds.width + 30)), y: -12 - .random(in: 0...28))
         let image: CGImage
         let size: CGSize
         var alpha: Float
         switch kind {
         case .petals:
-            image = Sprite.petal(Int.random(in: 0..<3))
+            image = Sprite.petal(variant: Int.random(in: 0..<3))
             size = CGSize(width: body.radius * 2.4, height: body.radius * 1.8)
             alpha = 0.92
         case .leaves:
-            image = Sprite.leaf(Int.random(in: 0..<4))
+            image = Sprite.leaf(variant: Int.random(in: 0..<4))
             size = CGSize(width: body.radius * 2.7, height: body.radius * 1.55)
             alpha = 0.94
         default:
@@ -321,11 +327,11 @@ final class WeatherView: NSView {
             let plain = body.radius / WeatherPhysics.snowRadiusScale(density: density)
             alpha = Float(0.89 * (0.46 + min(0.46, plain * 0.24)))
         }
-        var particle = Particle(layer: borrowLayer(in: foreground ? front : back, image: image, size: size),
+        var particle = Particle(layer: borrowLayer(in: isForeground ? front : back, image: image, size: size),
                                 look: .faller, body: body,
-                                flight: WeatherFlight(start: start, points: [origin], angles: [0]),
-                                born: start, expires: start, alpha: alpha, foreground: foreground)
-        route(&particle, from: origin, velocity: CGVector(dx: .random(in: -14...22), dy: body.terminal * 0.7), at: start)
+                                flight: WeatherFlight(startTime: start, points: [origin], angles: [0]),
+                                born: start, expires: start, alpha: alpha, isForeground: isForeground)
+        route(&particle, from: origin, velocity: CGVector(dx: .random(in: -14...22), dy: body.terminalSpeed * 0.7), at: start)
         guard particle.expires > time else { return recycle(particle.layer) }
         show(particle, fresh: true)
         particles.append(particle)
@@ -334,61 +340,61 @@ final class WeatherView: NSView {
     private func addClump(_ clump: SnowClump, at time: CGFloat, appearing: Bool = false) {
         guard particles.count < target * 3 + 160 else { return }
         let body = WeatherBody(radius: clump.radius * WeatherPhysics.snowRadiusScale(density: density),
-                               terminal: .random(in: 150...210), gusts: 0.3)
+                               terminalSpeed: .random(in: 150...210), windExposure: 0.3)
         var particle = Particle(layer: borrowLayer(in: back, image: Sprite.snow,
                                                    size: CGSize(width: body.radius * 2.6, height: body.radius * 2.6)),
                                 look: .faller, body: body,
-                                flight: WeatherFlight(start: time, points: [clump.position], angles: [0]),
+                                flight: WeatherFlight(startTime: time, points: [clump.position], angles: [0]),
                                 born: time, expires: time, alpha: 0.8,
-                                releasedFrom: clump.passesOwnLedge ? clump.from : nil, heavy: true)
+                                releasedFrom: clump.fallsPastSource ? clump.sourceID : nil, heavy: true)
         route(&particle, from: clump.position, velocity: clump.velocity, at: time)
         show(particle, fresh: appearing)
         particles.append(particle)
     }
 
     private func addFirefly(at time: CGFloat, age: CGFloat) {
-        let body = physics.body(foreground: false, density: density)
+        let body = physics.makeBody(isForeground: false, density: density)
         let life = CGFloat.random(in: 10...16)
         let born = time - age * life
         let origin = CGPoint(x: .random(in: 30...max(31, bounds.width - 30)), y: .random(in: 40...max(41, bounds.height - 30)))
         var particle = Particle(layer: borrowLayer(in: back, image: Sprite.glow,
                                                    size: CGSize(width: body.radius * 10, height: body.radius * 10)),
                                 look: .firefly, body: body,
-                                flight: WeatherFlight(start: time, points: [origin], angles: [0]),
+                                flight: WeatherFlight(startTime: time, points: [origin], angles: [0]),
                                 born: born, expires: born + life, alpha: 0.9)
         let heading = CGFloat.random(in: 0...(2 * .pi))
-        particle.flight = physics.wander(body, from: origin,
-                                         velocity: CGVector(dx: cos(heading) * body.terminal, dy: sin(heading) * body.terminal),
+        particle.flight = physics.wanderingFlight(of: body, from: origin,
+                                         velocity: CGVector(dx: cos(heading) * body.terminalSpeed, dy: sin(heading) * body.terminalSpeed),
                                          at: time, duration: particle.expires - time, toward: attractor)
         show(particle, fresh: true)
         particles.append(particle)
     }
 
     private func addMeteor(at time: CGFloat) {
-        let body = physics.body(foreground: false, density: density)
+        let body = physics.makeBody(isForeground: false, density: density)
         let pace = CGFloat.random(in: 400...580)
         let velocity = CGVector(dx: -0.788 * pace, dy: 0.616 * pace)
         let origin = CGPoint(x: .random(in: (bounds.width * 0.15)...(bounds.width + bounds.height * 0.6)), y: -8)
-        let flight = physics.glide(from: origin, velocity: velocity, at: time)
+        let flight = physics.straightFlight(from: origin, velocity: velocity, at: time)
         let layer = borrowLayer(in: back, image: Sprite.streak,
                                 size: CGSize(width: pace * 0.2, height: body.radius * 2.6))
         layer.anchorPoint = CGPoint(x: 0.96, y: 0.5)
         layer.transform = CATransform3DMakeRotation(atan2(velocity.dy, velocity.dx), 0, 0, 1)
         let particle = Particle(layer: layer, look: .meteor, body: body, flight: flight,
-                                born: time, expires: flight.end, alpha: 0.95)
+                                born: time, expires: flight.endTime, alpha: 0.95)
         show(particle, fresh: true)
         particles.append(particle)
     }
 
     private func addSpark(at point: CGPoint, time: CGFloat, rain: Bool) {
-        let spark = WeatherPhysics.spark(rain: rain)
-        let flight = physics.fly(spark.body, from: point, velocity: spark.velocity, at: time,
+        let spark = WeatherPhysics.makeSpark(isRaindrop: rain)
+        let flight = physics.flight(of: spark.body, from: point, velocity: spark.velocity, at: time,
                                  collides: false, limit: spark.life)
         let side = spark.body.radius * 2.6
         let particle = Particle(layer: borrowLayer(in: back, image: rain ? Sprite.droplet : Sprite.ember,
                                                    size: CGSize(width: side, height: side)),
                                 look: .spark, body: spark.body, flight: flight,
-                                born: time, expires: flight.end, alpha: rain ? 0.8 : 0.95)
+                                born: time, expires: flight.endTime, alpha: rain ? 0.8 : 0.95)
         show(particle, fresh: false)
         particles.append(particle)
     }
@@ -397,8 +403,8 @@ final class WeatherView: NSView {
         let life = CGFloat.random(in: 0.26...0.4)
         let width = CGFloat.random(in: 9...16)
         let layer = borrowLayer(in: back, image: Sprite.crown, size: CGSize(width: width, height: width * 0.42))
-        let crown = Particle(layer: layer, look: .crown, body: WeatherBody(radius: 1, terminal: 1),
-                             flight: WeatherFlight(start: time, times: [0, life], points: [point, point], angles: [0, 0]),
+        let crown = Particle(layer: layer, look: .crown, body: WeatherBody(radius: 1, terminalSpeed: 1),
+                             flight: WeatherFlight(startTime: time, times: [0, life], points: [point, point], angles: [0, 0]),
                              born: time, expires: time + life, alpha: 0.7)
         show(crown, fresh: false)
         particles.append(crown)
@@ -407,25 +413,25 @@ final class WeatherView: NSView {
 
     /// Plans a falling particle's path from here, and how long it stays once it lands.
     private func route(_ particle: inout Particle, from origin: CGPoint, velocity: CGVector, at time: CGFloat) {
-        var flight = physics.fly(particle.body, from: origin, velocity: velocity, at: time,
-                                 foreground: particle.foreground, skipping: particle.releasedFrom)
+        var flight = physics.flight(of: particle.body, from: origin, velocity: velocity, at: time,
+                                 isForeground: particle.isForeground, skipping: particle.releasedFrom)
         particle.restingOn = nil
         particle.settled = false
         var afterlife: CGFloat = 0
-        if let landing = flight.landing {
+        if let landing = flight.landingSurfaceID {
             flight.points[flight.points.count - 1] = restPoint(on: landing, at: flight.endPoint)
             particle.restingOn = landing
             afterlife = kind == .snow ? Self.snowRestTime : Self.restTime + Self.fadeTime
         }
         particle.flight = flight
-        particle.expires = flight.end + afterlife
+        particle.expires = flight.endTime + afterlife
     }
 
     /// Where something that reached a ledge at `point` comes to rest: on top of the snow already
     /// there, or a little heaped up for leaves and petals.
     private func restPoint(on id: UInt32, at point: CGPoint) -> CGPoint {
         guard kind == .snow else { return CGPoint(x: point.x, y: point.y - .random(in: 0.6...6.5)) }
-        let lift = physics.banks.first { $0.surface.id == id }.map { driftHeight($0, at: point.x) } ?? 0
+        let lift = physics.snowBanks.first { $0.surface.id == id }.map { driftHeight($0, at: point.x) } ?? 0
         return CGPoint(x: point.x, y: point.y - max(0, lift - 1))
     }
 
@@ -433,14 +439,14 @@ final class WeatherView: NSView {
     private func show(_ particle: Particle, fresh: Bool) {
         let flight = particle.flight
         let layer = particle.layer
-        let total = max(0.02, particle.expires - flight.start)
+        let total = max(0.02, particle.expires - flight.startTime)
         if flight.points.count > 1, flight.duration > 0 {
             let fly = CAKeyframeAnimation(keyPath: "position")
             fly.values = flight.points.map { NSValue(point: $0) }
             fly.keyTimes = flight.times.map { NSNumber(value: Double($0 / flight.duration)) }
             fly.calculationMode = flight.points.count > 2 ? .cubic : .linear
             fly.duration = flight.duration
-            fly.beginTime = flight.start
+            fly.beginTime = flight.startTime
             fly.fillMode = .backwards
             layer.add(fly, forKey: "fly")
         }
@@ -452,7 +458,7 @@ final class WeatherView: NSView {
         case .faller:
             let rise = fresh ? (particle.heavy ? 0.03 : min(0.6, total * 0.3)) : 0
             keys = [(0, fresh ? 0 : alpha), (rise, alpha)]
-            if flight.landing != nil {
+            if flight.landingSurfaceID != nil {
                 keys += [(total - (kind == .snow ? 1.1 : Self.fadeTime), alpha), (total, 0)]
             } else {
                 keys.append((total, alpha))
@@ -460,14 +466,14 @@ final class WeatherView: NSView {
             if particle.body.tumbles {
                 let turn = CAKeyframeAnimation(keyPath: "transform")
                 let turns = flight.times.indices.map { index -> CATransform3D in
-                    let time = flight.start + flight.times[index]
+                    let time = flight.startTime + flight.times[index]
                     let face = 0.3 + 0.35 * (1 + cos(2.6 * particle.body.swayRate * time + particle.body.phase * 3))
                     return CATransform3DScale(CATransform3DMakeRotation(flight.angles[index], 0, 0, 1), 1, face, 1)
                 }
                 turn.values = turns.map { NSValue(caTransform3D: $0) }
                 turn.keyTimes = flight.times.map { NSNumber(value: Double($0 / max(0.001, flight.duration))) }
                 turn.duration = max(0.02, flight.duration)
-                turn.beginTime = flight.start
+                turn.beginTime = flight.startTime
                 turn.fillMode = .backwards
                 layer.add(turn, forKey: "turn")
                 layer.transform = turns[turns.count - 1]
@@ -480,7 +486,7 @@ final class WeatherView: NSView {
             spread.fromValue = 0.25
             spread.toValue = 1
             spread.duration = total
-            spread.beginTime = flight.start
+            spread.beginTime = flight.startTime
             spread.fillMode = .backwards
             spread.timingFunction = CAMediaTimingFunction(name: .easeOut)
             layer.add(spread, forKey: "spread")
@@ -489,9 +495,9 @@ final class WeatherView: NSView {
         case .firefly:
             let life = particle.expires - particle.born
             keys = stride(from: CGFloat(0), through: total, by: 0.2).map { offset in
-                let age = flight.start + offset - particle.born
+                let age = flight.startTime + offset - particle.born
                 let envelope = max(0, min(1, age / 1.5, (life - age) / 2))
-                let pulse = 0.62 + 0.38 * sin((flight.start + offset) * 2.3 + particle.body.phase * 5)
+                let pulse = 0.62 + 0.38 * sin((flight.startTime + offset) * 2.3 + particle.body.phase * 5)
                 return (offset, alpha * Float(envelope * pulse))
             }
             keys.append((total, 0))
@@ -510,21 +516,22 @@ final class WeatherView: NSView {
         fade.values = values
         fade.keyTimes = times
         fade.duration = total
-        fade.beginTime = flight.start
+        fade.beginTime = flight.startTime
         fade.fillMode = .backwards
         layer.add(fade, forKey: "fade")
     }
 
     private func position(of particle: Particle, at time: CGFloat) -> CGPoint {
-        if time >= particle.flight.end { return particle.flight.endPoint }
+        if time >= particle.flight.endTime { return particle.flight.endPoint }
         return particle.layer.presentation()?.position ?? particle.flight.state(at: time).position
     }
 
+    /// Tells the view where the windows are now, so weather can land on, ride along with and fall off them.
     func update(surfaces: [WeatherSurface], masks: [CGRect], elapsed: CGFloat) {
         guard bounds.width > 0, bounds.height > 0 else { return }
-        let change = physics.setSurfaces(surfaces, size: bounds.size, elapsed: elapsed)
+        let change = physics.updateSurfaces(surfaces, in: bounds.size, elapsed: elapsed)
         self.surfaces = surfaces
-        guard change.changed || geometryStale || self.masks != masks else { return }
+        guard change.hasChanges || geometryStale || self.masks != masks else { return }
         let time = now
         CATransaction.begin()
         CATransaction.setDisableActions(true)
@@ -537,19 +544,19 @@ final class WeatherView: NSView {
             }
             cutout.path = path
         }
-        if change.changed {
+        if change.hasChanges {
             if kind == .snow { drawBanks(animated: false) }
             for index in particles.indices {
                 var particle = particles[index]
                 guard particle.look == .faller else { continue }
-                if let id = particle.restingOn, time >= particle.flight.end {
+                if let id = particle.restingOn, time >= particle.flight.endTime {
                     let origin = particle.flight.endPoint
-                    if change.removed.contains(id) {
-                        particle.foreground = true
+                    if change.removedIDs.contains(id) {
+                        particle.isForeground = true
                         particle.releasedFrom = id
                         front.addSublayer(particle.layer)
                         route(&particle, from: origin, velocity: CGVector(dx: .random(in: -12...12), dy: .random(in: 0...40)), at: time)
-                    } else if change.resized.contains(id), let rect = physics.ledges.first(where: { $0.id == id })?.rect {
+                    } else if change.resizedIDs.contains(id), let rect = physics.ledges.first(where: { $0.id == id })?.rect {
                         guard origin.x < rect.minX || origin.x > rect.maxX else {
                             let point = restPoint(on: id, at: CGPoint(x: origin.x, y: rect.minY))
                             particle.flight.points[particle.flight.points.count - 1] = point
@@ -559,9 +566,9 @@ final class WeatherView: NSView {
                         }
                         particle.releasedFrom = id
                         route(&particle, from: origin, velocity: CGVector(dx: .random(in: -8...8), dy: .random(in: 0...30)), at: time)
-                    } else if let offset = change.carried[id] {
+                    } else if let offset = change.offsets[id] {
                         let point = CGPoint(x: origin.x + offset.dx, y: origin.y + offset.dy)
-                        guard let shake = change.shaken[id], CGFloat.random(in: 0...1) < shake.fraction else {
+                        guard let shake = change.shakes[id], CGFloat.random(in: 0...1) < shake.fraction else {
                             particle.flight.points[particle.flight.points.count - 1] = point
                             particle.layer.position = point
                             particles[index] = particle
@@ -576,8 +583,8 @@ final class WeatherView: NSView {
                     } else {
                         continue
                     }
-                } else if time < particle.flight.end,
-                          !physics.stillValid(particle.flight, after: time, foreground: particle.foreground,
+                } else if time < particle.flight.endTime,
+                          !physics.isStillValid(particle.flight, after: time, isForeground: particle.isForeground,
                                               skipping: particle.releasedFrom) {
                     let state = particle.flight.state(at: time)
                     route(&particle, from: position(of: particle, at: time), velocity: state.velocity, at: time)
@@ -592,8 +599,9 @@ final class WeatherView: NSView {
         CATransaction.commit()
     }
 
-    func pointer(at point: CGPoint, velocity: CGVector, elapsed: CGFloat) {
-        guard !paused else { return }
+    /// Tells the view where the pointer is, so it can brush snow, scatter leaves or draw fireflies.
+    func pointerMoved(to point: CGPoint, velocity: CGVector, elapsed: CGFloat) {
+        guard !isPaused else { return }
         let pace = hypot(velocity.dx, velocity.dy)
         let previous = lastPointer ?? point
         lastPointer = point
@@ -612,7 +620,7 @@ final class WeatherView: NSView {
             for index in particles.indices where particles[index].look == .firefly && particles[index].expires - time > 0.5 {
                 var particle = particles[index]
                 let state = particle.flight.state(at: time)
-                particle.flight = physics.wander(particle.body, from: position(of: particle, at: time), velocity: state.velocity,
+                particle.flight = physics.wanderingFlight(of: particle.body, from: position(of: particle, at: time), velocity: state.velocity,
                                                  at: time, duration: particle.expires - time, toward: gather)
                 show(particle, fresh: false)
                 particles[index] = particle
@@ -626,8 +634,8 @@ final class WeatherView: NSView {
             CATransaction.setDisableActions(true)
             for index in particles.indices where particles[index].look == .faller {
                 var particle = particles[index]
-                let resting = particle.restingOn != nil && time >= particle.flight.end
-                guard resting || time - particle.flight.start > 0.35 else { continue }
+                let resting = particle.restingOn != nil && time >= particle.flight.endTime
+                guard resting || time - particle.flight.startTime > 0.35 else { continue }
                 let origin = position(of: particle, at: time)
                 let dx = origin.x - point.x, dy = origin.y - point.y
                 let distance = hypot(dx, dy)
@@ -658,11 +666,11 @@ final class WeatherView: NSView {
         for step in 1...steps {
             let t = CGFloat(step) / CGFloat(steps)
             let point = CGPoint(x: start.x + (end.x - start.x) * t, y: start.y + (end.y - start.y) * t)
-            for bank in physics.banks where !bank.profile.isEmpty {
+            for bank in physics.snowBanks where !bank.depths.isEmpty {
                 let top = bank.surface.rect.minY
                 guard point.x >= bank.surface.rect.minX, point.x <= bank.surface.rect.maxX,
                       point.y > top - driftHeight(bank, at: point.x) - 9, point.y < top + 5 else { continue }
-                clumps += physics.brush(bank.surface.id, at: point.x, reach: 13, velocity: velocity)
+                clumps += physics.brushSnow(off: bank.surface.id, at: point.x, reach: 13, velocity: velocity)
             }
         }
         guard !clumps.isEmpty else { return }
@@ -677,7 +685,7 @@ final class WeatherView: NSView {
 
     private func drawBanks(animated: Bool) {
         var live = Set<UInt32>()
-        for bank in physics.banks {
+        for bank in physics.snowBanks {
             let id = bank.surface.id
             guard let path = bankPath(bank) else { continue }
             live.insert(id)
@@ -726,7 +734,7 @@ final class WeatherView: NSView {
     }
 
     private func bankPath(_ bank: SnowBank) -> CGPath? {
-        guard bank.profile.contains(where: { $0 > 0.16 }) else { return nil }
+        guard bank.depths.contains(where: { $0 > 0.16 }) else { return nil }
         let rect = bank.surface.rect
         let left = max(0, rect.minX)
         let right = min(bounds.width, rect.maxX)
@@ -756,14 +764,14 @@ final class WeatherView: NSView {
 
     /// Sends the plough across the bottom of the screen. Snow on window ledges tips off first, and
     /// the blade then clears the ground, the snowballs and anything that lands in front of it.
-    func plough() {
-        guard kind == .snow, truck == nil, !paused, bounds.width > 0 else { return }
+    func sendPlough() {
+        guard kind == .snow, truck == nil, !isPaused, bounds.width > 0 else { return }
         let time = now
         let finish = bounds.width + 90
         let crossing = (finish - Self.ploughStart) / Self.ploughPace
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        for clump in physics.shedLedges() { addClump(clump, at: time) }
+        for clump in physics.shedLedgeSnow() { addClump(clump, at: time) }
         drawBanks(animated: false)
 
         let layer = CALayer()
@@ -804,7 +812,7 @@ final class WeatherView: NSView {
             ground.shape.mask = wipe
         }
 
-        for (index, ball) in snowballs.placed.enumerated() where index < ballLayers.count {
+        for (index, ball) in snowballs.placedBalls.enumerated() where index < ballLayers.count {
             let reach = max(0, ball.center.x - ball.radius - Self.bladeReach - Self.ploughStart) / Self.ploughPace
             let scoop = CABasicAnimation(keyPath: "opacity")
             scoop.fromValue = 1
@@ -887,16 +895,18 @@ final class WeatherView: NSView {
         ball.addSublayer(layer)
     }
 
-    func beginBall(at point: CGPoint) {
-        snowballs.begin(at: point)
-        dragBall(to: point)
+    /// Starts rolling a snowball at `point`.
+    func beginRollingBall(at point: CGPoint) {
+        snowballs.beginRolling(at: point)
+        rollBall(to: point)
     }
 
-    func dragBall(to point: CGPoint) {
+    /// Moves the snowball being rolled to `point`.
+    func rollBall(to point: CGPoint) {
         grip.append((point, CACurrentMediaTime()))
         if grip.count > 8 { grip.removeFirst() }
-        snowballs.drag(to: point)
-        guard let ball = snowballs.rolling else { return }
+        snowballs.roll(to: point)
+        guard let ball = snowballs.rollingBall else { return }
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         let layer = rollingLayer ?? ballLayer(ball)
@@ -954,20 +964,21 @@ final class WeatherView: NSView {
                 let piece = SnowClump(position: CGPoint(x: position.x + .random(in: -ball.radius...ball.radius), y: floor - 3),
                                       velocity: CGVector(dx: v.dx * 0.25 + CGFloat.random(in: -170...170),
                                                          dy: -CGFloat.random(in: 70...300) - abs(v.dy) * 0.12),
-                                      radius: .random(in: 1.2...2.6), from: 0, passesOwnLedge: false)
+                                      radius: .random(in: 1.2...2.6), sourceID: 0, fallsPastSource: false)
                 addClump(piece, at: time + flight, appearing: true)
             }
         }
         CATransaction.commit()
     }
 
+    /// Lets go of the snowball at `point`: dropped if the hand is slow, thrown if it is fast.
     func releaseBall(at point: CGPoint) {
         let velocity = releaseVelocity(at: point)
         if hypot(velocity.dx, velocity.dy) > 520 {
-            snowballs.drag(to: point)
-            if let ball = snowballs.throwBall() { return throwBall(ball, velocity: velocity) }
+            snowballs.roll(to: point)
+            if let ball = snowballs.removeRollingBall() { return throwBall(ball, velocity: velocity) }
         }
-        let dropped = snowballs.release(at: point, size: bounds.size, floor: bounds.height - 6)
+        let dropped = snowballs.dropBall(at: point, in: bounds.size, floorY: bounds.height - 6)
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         rollingLayer?.removeFromSuperlayer()
@@ -998,8 +1009,8 @@ final class WeatherView: NSView {
                 layer.add(settle, forKey: "settle")
             }
             for man in snowballs.snowmen where ballLayers[man.head].sublayers == nil {
-                let radius = snowballs.placed[man.head].radius
-                let girth = snowballs.placed[man.torso].radius
+                let radius = snowballs.placedBalls[man.head].radius
+                let girth = snowballs.placedBalls[man.torso].radius
                 dress(ballLayers[man.head], with: Sprite.face, after: fall,
                       frame: CGRect(x: 0, y: -radius * 0.75, width: radius * 2, height: radius * 2.75))
                 dress(ballLayers[man.torso], with: Sprite.torso, after: fall,

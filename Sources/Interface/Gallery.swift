@@ -1,8 +1,11 @@
 import AppKit
 import SwiftUI
 
+/// A scene's picture with a light preview of its weather on top.
 struct LiveScene: View {
+    /// The scene to show.
     let scene: Scene
+    /// The app state, read to decide whether the preview should move.
     let desktop: Desktop
 
     @Environment(\.controlActiveState) private var windowActivity
@@ -10,16 +13,17 @@ struct LiveScene: View {
     var body: some View {
         SceneArtwork(scene: scene)
             .overlay {
-                if desktop.motion, windowActivity == .key, desktop.active == nil {
-                    Weather(scene: scene, running: true, strength: desktop.intensity, speed: desktop.speed)
+                if desktop.isMotionEnabled, windowActivity == .key, desktop.activeScene == nil {
+                    WeatherPreview(scene: scene, isRunning: true, density: desktop.density, speed: desktop.fallSpeed)
                 }
             }
     }
 }
 
+/// The main window: pick a scene, adjust its weather and apply it to the desktop.
 struct Gallery: View {
     @Bindable var desktop: Desktop
-    @State private var selection = Scene.catalog[0]
+    @State private var selection = Scene.all[0]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 17) {
@@ -32,7 +36,7 @@ struct Gallery: View {
                 Spacer()
                 VStack(alignment: .trailing, spacing: 5) {
                     HStack(spacing: 8) {
-                        if Wallpapers.shared.isCustom(selection) {
+                        if Wallpapers.shared.hasCustomImage(for: selection) {
                             Button("Use Original") { desktop.resetWallpaper(for: selection) }
                         }
                         Button("Change Wallpaper…") { desktop.chooseWallpaper(for: selection) }
@@ -61,14 +65,14 @@ struct Gallery: View {
                 .clipShape(.rect(cornerRadius: 12))
 
             HStack(spacing: 8) {
-                ForEach(Scene.catalog) { scene in
+                ForEach(Scene.all) { scene in
                     Button {
                         selection = scene
                     } label: {
                         VStack(alignment: .leading, spacing: 5) {
                             SceneArtwork(scene: scene)
                                 .overlay(alignment: .topLeading) {
-                                    Image(systemName: scene.symbol)
+                                    Image(systemName: scene.symbolName)
                                         .font(.caption).padding(6)
                                         .background(.black.opacity(0.42), in: Circle()).padding(5)
                                 }
@@ -90,16 +94,16 @@ struct Gallery: View {
                 }
             }
             HStack(spacing: 14) {
-                Toggle("Motion", isOn: $desktop.motion)
-                Slider(value: $desktop.intensity, in: 0.05...1.5) { Text("Weather density") }
+                Toggle("Motion", isOn: $desktop.isMotionEnabled)
+                Slider(value: $desktop.density, in: 0.05...1.5) { Text("Weather density") }
                     .frame(width: 142)
-                    .disabled(!desktop.motion)
-                Slider(value: $desktop.speed, in: 0.12...1.1) { Text("Fall speed") }
+                    .disabled(!desktop.isMotionEnabled)
+                Slider(value: $desktop.fallSpeed, in: 0.12...1.1) { Text("Fall speed") }
                     .frame(width: 135)
-                    .disabled(!desktop.motion)
+                    .disabled(!desktop.isMotionEnabled)
                 Spacer()
                 Button("Clear") { desktop.clear() }
-                    .disabled(desktop.active == nil)
+                    .disabled(desktop.activeScene == nil)
                 Button("Apply to All Displays") { desktop.apply(selection) }
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.defaultAction)
@@ -114,18 +118,18 @@ struct Gallery: View {
         .background(Color(red: 0.07, green: 0.09, blue: 0.12))
         .preferredColorScheme(.dark)
         .alert("Driftwood", isPresented: Binding(
-            get: { desktop.error != nil }, set: { if !$0 { desktop.error = nil } }
+            get: { desktop.errorMessage != nil }, set: { if !$0 { desktop.errorMessage = nil } }
         )) {
-            Button("OK") { desktop.error = nil }
+            Button("OK") { desktop.errorMessage = nil }
         } message: {
-            Text(desktop.error ?? "")
+            Text(desktop.errorMessage ?? "")
         }
     }
 
     private var status: String {
         if let notice = desktop.notice { return notice }
-        if desktop.active?.id == "snow" { return "Drag snow up from the bottom edge. Drop one ball above another to stack them." }
-        if let active = desktop.active { return "On your desktop · \(active.name)" }
+        if desktop.activeScene?.weather == .snow { return "Drag snow up from the bottom edge. Drop one ball above another to stack them." }
+        if let active = desktop.activeScene { return "On your desktop · \(active.name)" }
         return "Preview a scene, then apply it to your desktop."
     }
 }
