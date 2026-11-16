@@ -29,9 +29,11 @@ A lightweight menu bar app that makes it snow, rain, or drift petals, leaves, fi
 - **🚜 Snow plough** — Send a plough across the screen to clear the drifts
 - **🌬️ Real physics** — Gravity, air drag and shared gusts of wind; big flakes fall faster, leaves rock as they fall
 
-### Seven scenes
+### Seven themes
 
-| Scene | Weather | What it does |
+Driftwood comes with seven themes, each with its own wallpaper and its own weather.
+
+| Theme | Weather | What it does |
 |-------|---------|--------------|
 | **Snow Lantern Inn** | ❄️ Snow | Piles up on windows and the ground |
 | **The Rainy Bookshop** | 🌧️ Rain | Splashes on window tops, with lightning now and then |
@@ -40,6 +42,8 @@ A lightweight menu bar app that makes it snow, rain, or drift petals, leaves, fi
 | **Lantern Marsh** | ✨ Fireflies | Wander, and gather round a still pointer |
 | **Campfire Lake** | 🌠 Meteors | Streak across and burst into sparks on your windows |
 | **GTA 6** | 💸 Money | Hundred-dollar notes flutter down, pile up and scatter when the pointer brushes past |
+
+**🎮 For GTA fans** — there's a GTA theme too, with its own wallpaper and a money-rain animation: hundred-dollar notes that fold, flip and pile up on your windows.
 
 ### And more
 - **🖼️ Your own wallpaper** — Put any picture behind a scene's weather
@@ -255,7 +259,5 @@ open build/Driftwood.app --args -applyScene snow   # rain, petals, leaves, firef
 ---
 
 ## 🙏 Credits and License
-
-The six bundled wallpapers were generated for Driftwood with ImageGen. The GTA 6 scene has no bundled picture: add your own by saving it as `Resources/Artwork/cash.jpg` before building, or pick one with **Change Wallpaper…** in the gallery. Without one the scene shows a plain backdrop.
 
 Driftwood reuses the desktop window and display identification code from [WallFlow](https://github.com/ritulsingh/WallFlow/tree/b0946f519e9b8143e223ba3a9dceeca454f206a8), copyright 2026 ritulsingh, under the MIT license. The desktop window code was adapted for this app. See [LICENSE-WallFlow](LICENSE-WallFlow) for the full upstream notice. The original Driftwood portions are also available under MIT terms in [LICENSE](LICENSE).
