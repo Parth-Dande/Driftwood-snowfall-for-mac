@@ -7,6 +7,3 @@
 /Working Files/
 *.app/
 *.zip
-# The GTA 6 scene's picture is Rockstar Games' artwork. It is kept out of the repository;
-# see the README for where to put your own copy.
-/Resources/Artwork/cash.jpg

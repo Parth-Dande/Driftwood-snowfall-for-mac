@@ -2,7 +2,7 @@
 
 ## 1.10.0
 
-- New scene, **GTA 6**: hundred-dollar notes flutter down over a wallpaper you supply. Each note is built from hinged strips, so it is really folded in depth (creased, halved, curled or rippled), flexes as it falls and flips in three dimensions at different distances. Notes pile up on windows and the ground and scatter when the pointer brushes past.
+- New scene, **GTA 6**: hundred-dollar notes flutter down. It ships with a placeholder picture asking you to add an official wallpaper with **Change Wallpaper…**. Each note is built from hinged strips, so it is really folded in depth (creased, halved, curled or rippled), flexes as it falls and flips in three dimensions at different distances. Notes pile up on windows and the ground and scatter when the pointer brushes past.
 - Driftwood runs in the background. It stays in the menu bar, shows in the Dock only while the gallery is open, and keeps the weather going with no windows open.
 - On first launch Driftwood asks what it may do, and works without whatever you decline. **Open at Login** starts it with your scene when you log in. **Show on Lock Screen** puts the scene's picture on the lock screen by making it the system desktop picture, and restores your own picture afterwards. It is re-applied when a display connects or wakes and when you switch desktop, since macOS keeps a separate picture for each.
 - The menu bar item is now a native status item that responds on the press and opens its controls directly beneath it, and opening the app again always brings the gallery back.
