@@ -44,7 +44,7 @@ final class DriftwoodApp: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         // With Driftwood gone the desktop shows the system picture again, so it must be the user's own.
-        LockScreenPicture.restore()
+        LockScreenPicture.apply(nil)
     }
 }
 

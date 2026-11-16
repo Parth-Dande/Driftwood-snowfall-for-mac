@@ -47,6 +47,7 @@ final class Desktop {
     private let weather = DesktopWeather()
     private var windows: [CGDirectDisplayID: WallpaperWindow] = [:]
     private var observation: NSObjectProtocol?
+    private var workspaceObservers: [NSObjectProtocol] = []
 
     /// Creates the state and restores the scene that was showing when Driftwood last quit.
     init() {
@@ -56,6 +57,13 @@ final class Desktop {
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
         ) { [weak self] _ in
             Task { @MainActor in self?.synchronizeWindows() }
+        }
+        // Each display and each desktop has its own system picture, so look again whenever a
+        // different one comes into view.
+        for name in [NSWorkspace.activeSpaceDidChangeNotification, NSWorkspace.didWakeNotification, NSWorkspace.screensDidWakeNotification] {
+            workspaceObservers.append(NSWorkspace.shared.notificationCenter.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.updateLockScreenPicture() }
+            })
         }
         let wanted = UserDefaults.standard.string(forKey: "applyScene") ?? UserDefaults.standard.string(forKey: "activeScene")
         if let scene = Scene.all.first(where: { $0.id == wanted }) {
@@ -108,12 +116,10 @@ final class Desktop {
     }
 
     /// Carries the active scene's picture to the lock screen, or puts the user's own picture back.
+    /// Safe to call often: it only changes what is not already right.
     private func updateLockScreenPicture() {
-        guard showsOnLockScreen, let activeScene, let url = Wallpapers.shared.imageURL(for: activeScene) else {
-            LockScreenPicture.restore()
-            return
-        }
-        LockScreenPicture.show(url)
+        let scene = showsOnLockScreen ? activeScene : nil
+        LockScreenPicture.apply(scene.flatMap { Wallpapers.shared.imageURL(for: $0) })
     }
 
     private func rebuildWindows() {
@@ -124,6 +130,7 @@ final class Desktop {
     }
 
     private func synchronizeWindows() {
+        updateLockScreenPicture()
         guard let activeScene else {
             for window in windows.values { window.close() }
             windows.removeAll()
