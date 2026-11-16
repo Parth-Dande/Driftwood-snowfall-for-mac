@@ -46,7 +46,8 @@ enum LockScreenPicture {
         return succeeded
     }
 
-    /// Whether `url` is a scene picture: bundled artwork from any copy of Driftwood, or one the user chose for a scene.
+    /// Whether `url` is a scene picture: bundled artwork from any copy of Driftwood, or a picture an
+    /// earlier version let the user choose for a scene.
     private static func isDriftwoodPicture(_ url: URL) -> Bool {
         url.path.contains("/Driftwood.app/Contents/Resources/Artwork/")
             || url.path.contains("/Application Support/Driftwood/Wallpapers/")

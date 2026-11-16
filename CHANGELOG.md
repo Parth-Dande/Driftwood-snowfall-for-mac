@@ -6,6 +6,7 @@
 - Driftwood runs in the background. It stays in the menu bar, shows in the Dock only while the gallery is open, and keeps the weather going with no windows open.
 - On first launch Driftwood asks what it may do, and works without whatever you decline. **Open at Login** starts it with your scene when you log in. **Show on Lock Screen** puts the scene's picture on the lock screen by making it the system desktop picture, and restores your own picture afterwards. It is re-applied when a display connects or wakes and when you switch desktop, since macOS keeps a separate picture for each.
 - The menu bar item is now a native status item that responds on the press and opens its controls directly beneath it, and opening the app again always brings the gallery back.
+- **Change Wallpaper…** is removed: each theme uses the wallpaper it comes with.
 
 ## 1.9.0
 
@@ -26,7 +27,7 @@
 - Ground snow settles into hilly drifts. Three stacked snowballs make a snowman with a hat, face, scarf, buttons and arms.
 - The weather sits just beneath the Dock instead of guessing the Dock's outline, so the drifts line up on every Dock size. Snow no longer piles on the Dock itself.
 - The weather no longer shows over a full-screen app while switching Spaces. Back on the desktop it waits about three seconds and then arrives from the top.
-- **Change Wallpaper…** puts your own picture behind any scene, with the best size shown in the gallery. The last scene comes back when Driftwood reopens.
+- The last scene comes back when Driftwood reopens.
 - Leaves and petals are drawn as leaves and petals. Meteors have a bright head and a fading tail, and raindrops leave a ring where they land. Leaves in the air are pushed by a passing pointer as well as the ones lying still.
 - **Fall speed** now runs weather time faster or slower. Its default is natural speed.
 - Driftwood has an app icon.

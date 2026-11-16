@@ -33,18 +33,6 @@ struct Gallery: View {
                         .tracking(3).foregroundStyle(.mint)
                     Text("Weather for your desktop").font(.system(size: 27, weight: .medium, design: .serif))
                 }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 5) {
-                    HStack(spacing: 8) {
-                        if Wallpapers.shared.hasCustomImage(for: selection) {
-                            Button("Use Original") { desktop.resetWallpaper(for: selection) }
-                        }
-                        Button("Change Wallpaper…") { desktop.chooseWallpaper(for: selection) }
-                            .help(Wallpapers.guidance)
-                    }
-                    Text("Best at \(Int(Wallpapers.recommendedSize.width)) × \(Int(Wallpapers.recommendedSize.height)) px or larger, landscape")
-                        .font(.caption2).foregroundStyle(.secondary)
-                }
             }
 
             LiveScene(scene: selection, desktop: desktop)
@@ -134,7 +122,6 @@ struct Gallery: View {
     }
 
     private var status: String {
-        if let notice = desktop.notice { return notice }
         if desktop.activeScene?.weather == .snow { return "Drag snow up from the bottom edge. Drop one ball above another to stack them." }
         if let active = desktop.activeScene { return "On your desktop · \(active.name)" }
         return "Preview a scene, then apply it to your desktop."
