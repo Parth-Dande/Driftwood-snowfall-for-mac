@@ -256,6 +256,6 @@ open build/Driftwood.app --args -applyScene snow   # rain, petals, leaves, firef
 
 ## 🙏 Credits and License
 
-The six bundled wallpapers were generated for Driftwood with ImageGen. The GTA 6 scene ships with a placeholder drawn in code that asks you to add the real thing: Rockstar Games' artwork is theirs, so it is not included. Download a wallpaper from [Rockstar's GTA VI page](https://www.rockstargames.com/VI/media/artwork-wallpapers) and pick it with **Change Wallpaper…** in the gallery. Driftwood is a fan project and is not affiliated with Rockstar Games. See [Resources/Artwork/REFERENCES.md](Resources/Artwork/REFERENCES.md) for the visual references and prompts.
+The six bundled wallpapers were generated for Driftwood with ImageGen. The GTA 6 scene has no bundled picture: add your own by saving it as `Resources/Artwork/cash.jpg` before building, or pick one with **Change Wallpaper…** in the gallery. Without one the scene shows a plain backdrop.
 
 Driftwood reuses the desktop window and display identification code from [WallFlow](https://github.com/ritulsingh/WallFlow/tree/b0946f519e9b8143e223ba3a9dceeca454f206a8), copyright 2026 ritulsingh, under the MIT license. The desktop window code was adapted for this app. See [LICENSE-WallFlow](LICENSE-WallFlow) for the full upstream notice. The original Driftwood portions are also available under MIT terms in [LICENSE](LICENSE).

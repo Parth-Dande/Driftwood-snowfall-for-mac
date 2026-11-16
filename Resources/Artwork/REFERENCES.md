@@ -5,7 +5,7 @@ The six bundled wallpapers were generated individually with the built-in ImageGe
 - [Thomas Kinkade Studios’ winter art gallery](https://www.thomaskinkade.com/pages/browse-winter-art)
 - [The Fitzwilliam Museum’s Snow Country exhibition](https://snowcountry.fitzmuseum.cam.ac.uk/explore/journeys-through-snow%E2%80%93mountain-and-river)
 
-The GTA 6 scene's bundled picture is a placeholder drawn in code with Core Graphics, asking the user to add an official Rockstar Games wallpaper.
+The GTA 6 scene has no bundled picture: each user supplies their own.
 
 ## Generation prompt
 
