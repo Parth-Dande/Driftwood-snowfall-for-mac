@@ -39,7 +39,7 @@ A lightweight menu bar app that makes it snow, rain, or drift petals, leaves, fi
 | **Cider Mill** | 🍂 Leaves | Pile up and scatter when the pointer brushes past |
 | **Lantern Marsh** | ✨ Fireflies | Wander, and gather round a still pointer |
 | **Campfire Lake** | 🌠 Meteors | Streak across and burst into sparks on your windows |
-| **Neon Coast** | 💸 Money | Banknotes flutter down, pile up and scatter when the pointer brushes past |
+| **GTA 6** | 💸 Money | Hundred-dollar notes flutter down, pile up and scatter when the pointer brushes past |
 
 ### And more
 - **🖼️ Your own wallpaper** — Put any picture behind a scene's weather
@@ -256,6 +256,6 @@ open build/Driftwood.app --args -applyScene snow   # rain, petals, leaves, firef
 
 ## 🙏 Credits and License
 
-Six of the bundled wallpapers were generated for Driftwood with ImageGen; Neon Coast is drawn in code. See [Resources/Artwork/REFERENCES.md](Resources/Artwork/REFERENCES.md) for the visual references and prompts.
+The six bundled wallpapers were generated for Driftwood with ImageGen. The GTA 6 scene's picture is not included, because it is Rockstar Games' artwork: download a wallpaper from [Rockstar's GTA VI page](https://www.rockstargames.com/VI/media/artwork-wallpapers) and either save it as `Resources/Artwork/cash.jpg` before building, or pick it with **Change Wallpaper…** in the gallery. Without one the scene shows a plain backdrop. Driftwood is a fan project and is not affiliated with Rockstar Games. See [Resources/Artwork/REFERENCES.md](Resources/Artwork/REFERENCES.md) for the visual references and prompts.
 
 Driftwood reuses the desktop window and display identification code from [WallFlow](https://github.com/ritulsingh/WallFlow/tree/b0946f519e9b8143e223ba3a9dceeca454f206a8), copyright 2026 ritulsingh, under the MIT license. The desktop window code was adapted for this app. See [LICENSE-WallFlow](LICENSE-WallFlow) for the full upstream notice. The original Driftwood portions are also available under MIT terms in [LICENSE](LICENSE).

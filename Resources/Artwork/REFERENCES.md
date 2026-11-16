@@ -1,11 +1,11 @@
 # Wallpaper artwork
 
-Six of the seven wallpapers were generated individually with the built-in ImageGen tool for Driftwood. The online references informed the lighting and seasonal atmosphere. The app bundles those illustrations.
+The six bundled wallpapers were generated individually with the built-in ImageGen tool for Driftwood. The online references informed the lighting and seasonal atmosphere. The app bundles those illustrations.
 
 - [Thomas Kinkade Studios’ winter art gallery](https://www.thomaskinkade.com/pages/browse-winter-art)
 - [The Fitzwilliam Museum’s Snow Country exhibition](https://snowcountry.fitzmuseum.cam.ac.uk/explore/journeys-through-snow%E2%80%93mountain-and-river)
 
-Neon Coast is not generated: it is an original sunset skyline drawn in code with Core Graphics.
+The GTA 6 scene has no bundled picture: it uses a Rockstar Games wallpaper that each user supplies.
 
 ## Generation prompt
 
