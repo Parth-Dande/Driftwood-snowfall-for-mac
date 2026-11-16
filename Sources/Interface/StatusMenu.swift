@@ -4,7 +4,8 @@ import SwiftUI
 /// The menu bar item's controls.
 struct StatusMenu: View {
     @Bindable var desktop: Desktop
-    @Environment(\.openWindow) private var openWindow
+    /// Called when the user asks for the gallery.
+    let openGallery: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -23,10 +24,7 @@ struct StatusMenu: View {
             }
             Slider(value: $desktop.fallSpeed, in: 0.12...1.1) { Text("Fall speed") }
             Divider()
-            Button("Open Gallery") {
-                openWindow(id: "gallery")
-                NSApp.activate(ignoringOtherApps: true)
-            }
+            Button("Open Gallery", action: openGallery)
             Menu("Apply Scene") {
                 ForEach(Scene.all) { scene in
                     Button(scene.name) { desktop.apply(scene) }
@@ -44,6 +42,9 @@ struct StatusMenu: View {
             Button("Clear Wallpaper") { desktop.clear() }
                 .disabled(desktop.activeScene == nil)
             Divider()
+            // Something the user has already allowed needs no switch here; the gallery keeps both.
+            if !desktop.opensAtLogin { Toggle("Open at Login", isOn: $desktop.opensAtLogin) }
+            if !desktop.showsOnLockScreen { Toggle("Show on Lock Screen", isOn: $desktop.showsOnLockScreen) }
             Button("Quit Driftwood") { NSApp.terminate(nil) }
         }
         .padding(14)

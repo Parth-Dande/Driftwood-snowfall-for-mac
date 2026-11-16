@@ -156,6 +156,7 @@ final class WeatherView: NSView {
         switch kind {
         case .snow: return min(225, Int(135 * scale))
         case .petals, .leaves: return Int(64 * scale)
+        case .cash: return Int(46 * scale)
         case .fireflies: return max(3, Int(34 * scale))
         case .stars, .rain: return 0
         }
@@ -166,6 +167,7 @@ final class WeatherView: NSView {
         case .snow: return CGFloat(target) * 80 / (bounds.height + 40)
         case .petals: return CGFloat(target) * 59 / (bounds.height + 40)
         case .leaves: return CGFloat(target) * 83 / (bounds.height + 40)
+        case .cash: return CGFloat(target) * 93 / (bounds.height + 40)
         case .fireflies: return CGFloat(target) / 13
         case .stars: return 1.7 * scale
         case .rain: return 0
@@ -215,7 +217,7 @@ final class WeatherView: NSView {
 
     private func seed(at time: CGFloat) {
         switch kind {
-        case .snow, .petals, .leaves:
+        case .snow, .petals, .leaves, .cash:
             for _ in 0..<target {
                 addFaller(at: time, age: .random(in: 0...1))
             }
@@ -234,7 +236,7 @@ final class WeatherView: NSView {
             guard particles.count < cap else { continue }
             let start = time + .random(in: 0...elapsed)
             switch kind {
-            case .snow, .petals, .leaves: addFaller(at: start, age: 0)
+            case .snow, .petals, .leaves, .cash: addFaller(at: start, age: 0)
             case .fireflies: addFirefly(at: start, age: 0)
             case .stars: addMeteor(at: start)
             case .rain: break
@@ -305,7 +307,7 @@ final class WeatherView: NSView {
     }
 
     private func addFaller(at time: CGFloat, age: CGFloat) {
-        let isForeground = kind == .snow && Int.random(in: 0..<4) == 0
+        let isForeground = (kind == .snow || kind == .cash) && Int.random(in: 0..<4) == 0
         let body = physics.makeBody(isForeground: isForeground, density: density)
         let start = time - age * (bounds.height + 40) / body.terminalSpeed
         let origin = CGPoint(x: .random(in: -50...(bounds.width + 30)), y: -12 - .random(in: 0...28))
@@ -321,6 +323,11 @@ final class WeatherView: NSView {
             image = Sprite.leaf(variant: Int.random(in: 0..<4))
             size = CGSize(width: body.radius * 2.7, height: body.radius * 1.55)
             alpha = 0.94
+        case .cash:
+            // The layer itself stays empty: the note is a folded shape of strips placed inside it.
+            image = Sprite.banknote(showingFace: true, shade: .plain)
+            size = CGSize(width: body.radius * 3.05, height: body.radius * 3.05 * Sprite.banknoteSize.height / Sprite.banknoteSize.width)
+            alpha = 1
         default:
             image = Sprite.snow
             size = CGSize(width: body.radius * 2.6, height: body.radius * 2.6)
@@ -331,6 +338,7 @@ final class WeatherView: NSView {
                                 look: .faller, body: body,
                                 flight: WeatherFlight(startTime: start, points: [origin], angles: [0]),
                                 born: start, expires: start, alpha: alpha, isForeground: isForeground)
+        if kind == .cash { holdBanknote(in: particle.layer) }
         route(&particle, from: origin, velocity: CGVector(dx: .random(in: -14...22), dy: body.terminalSpeed * 0.7), at: start)
         guard particle.expires > time else { return recycle(particle.layer) }
         show(particle, fresh: true)
@@ -467,6 +475,7 @@ final class WeatherView: NSView {
                 let turn = CAKeyframeAnimation(keyPath: "transform")
                 let turns = flight.times.indices.map { index -> CATransform3D in
                     let time = flight.startTime + flight.times[index]
+                    if kind == .cash { return banknoteTransform(for: particle, sample: index) }
                     let face = 0.3 + 0.35 * (1 + cos(2.6 * particle.body.swayRate * time + particle.body.phase * 3))
                     return CATransform3DScale(CATransform3DMakeRotation(flight.angles[index], 0, 0, 1), 1, face, 1)
                 }
@@ -475,8 +484,10 @@ final class WeatherView: NSView {
                 turn.duration = max(0.02, flight.duration)
                 turn.beginTime = flight.startTime
                 turn.fillMode = .backwards
-                layer.add(turn, forKey: "turn")
-                layer.transform = turns[turns.count - 1]
+                // A banknote turns as a whole folded shape inside its layer; a leaf or petal is the layer.
+                let turning = kind == .cash ? layer.sublayers?.first ?? layer : layer
+                turning.add(turn, forKey: "turn")
+                turning.transform = turns[turns.count - 1]
             }
         case .spark:
             keys = [(0, alpha), (total * 0.45, alpha), (total, 0)]
@@ -519,6 +530,38 @@ final class WeatherView: NSView {
         fade.beginTime = flight.startTime
         fade.fillMode = .backwards
         layer.add(fade, forKey: "fade")
+    }
+
+    /// Puts a folded banknote inside `layer`, or keeps the one a recycled layer already holds.
+    /// The layer supplies the perspective; the note inside it is what turns.
+    private func holdBanknote(in layer: CALayer) {
+        layer.contents = nil
+        var perspective = CATransform3DIdentity
+        perspective.m34 = -1 / 420
+        layer.sublayerTransform = perspective
+        let note = layer.sublayers?.first ?? {
+            let note = Banknote.makeLayer()
+            layer.addSublayer(note)
+            return note
+        }()
+        note.position = CGPoint(x: layer.bounds.midX, y: layer.bounds.midY)
+    }
+
+    /// How a banknote is turned at one sample of its flight: end over end, rolling from side to
+    /// side and spinning flat, at the size its distance from the viewer gives it. Once it lands it
+    /// lies tipped back a little, the way paper settles.
+    private func banknoteTransform(for particle: Particle, sample index: Int) -> CATransform3D {
+        let flight = particle.flight
+        let body = particle.body
+        let time = flight.startTime + flight.times[index]
+        let size = body.radius * 3.05 / Sprite.banknoteSize.width
+        let landed = index == flight.times.count - 1 && flight.landingSurfaceID != nil
+        let pitch = landed ? 1.02 + 0.2 * sin(body.phase * 5) : 1.9 * body.swayRate * time + body.phase * 3
+        let roll = landed ? 0 : 0.75 * sin(0.8 * body.swayRate * time + body.phase * 2)
+        var transform = CATransform3DMakeScale(size, size, size)
+        transform = CATransform3DRotate(transform, flight.angles[index], 0, 0, 1)
+        transform = CATransform3DRotate(transform, pitch, 1, 0, 0)
+        return CATransform3DRotate(transform, roll, 0, 1, 0)
     }
 
     private func position(of particle: Particle, at time: CGFloat) -> CGPoint {
@@ -626,7 +669,7 @@ final class WeatherView: NSView {
                 particles[index] = particle
             }
             CATransaction.commit()
-        case .leaves:
+        case .leaves, .cash:
             guard pace > 70, bounds.insetBy(dx: -90, dy: -90).contains(point) else { return }
             let time = now
             let reach: CGFloat = 85

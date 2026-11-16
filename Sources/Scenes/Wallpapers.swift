@@ -48,6 +48,12 @@ final class Wallpapers {
         return customFile(for: scene) != nil
     }
 
+    /// The file holding the picture for `scene`: the user's own if there is one, otherwise the bundled artwork.
+    func imageURL(for scene: Scene) -> URL? {
+        _ = revision
+        return customFile(for: scene) ?? Bundle.main.url(forResource: scene.id, withExtension: "jpg", subdirectory: "Artwork")
+    }
+
     /// The picture to show for `scene`: the user's own if there is one, otherwise the bundled artwork.
     func image(for scene: Scene) -> NSImage? {
         _ = revision

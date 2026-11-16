@@ -90,7 +90,7 @@ final class DesktopWeather {
         lastPower = 0
         lastUpkeep = 0
         do {
-            followsPointer = kind == .leaves || kind == .snow
+            followsPointer = kind == .leaves || kind == .snow || kind == .cash
             for screen in screens {
                 let view = WeatherView(kind: kind)
                 let panel = WeatherPanel(contentRect: screen.frame, styleMask: [.borderless, .nonactivatingPanel],

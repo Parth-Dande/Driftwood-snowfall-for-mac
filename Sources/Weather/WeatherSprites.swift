@@ -6,7 +6,8 @@ import QuartzCore
 enum Sprite {
     private static var cache: [String: CGImage] = [:]
 
-    private static func image(_ key: String, width: CGFloat, height: CGFloat, scale: CGFloat = 4,
+    /// Draws an image once and caches it under `key`. `draw` works in points with y pointing down.
+    static func image(_ key: String, width: CGFloat, height: CGFloat, scale: CGFloat = 4,
                               draw: (CGContext) -> Void) -> CGImage {
         if let cached = cache[key] { return cached }
         let context = CGContext(data: nil, width: Int(width * scale), height: Int(height * scale), bitsPerComponent: 8,
@@ -20,7 +21,8 @@ enum Sprite {
         return image
     }
 
-    private static func color(_ r: CGFloat, _ g: CGFloat, _ b: CGFloat, _ a: CGFloat = 1) -> CGColor {
+    /// An sRGB colour from components between 0 and 1.
+    static func color(_ r: CGFloat, _ g: CGFloat, _ b: CGFloat, _ a: CGFloat = 1) -> CGColor {
         CGColor(srgbRed: r, green: g, blue: b, alpha: a)
     }
 

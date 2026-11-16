@@ -24,6 +24,22 @@ final class Desktop {
             UserDefaults.standard.set(fallSpeed, forKey: "weatherSpeed")
         }
     }
+    /// Whether Driftwood opens in the background when the user logs in. If macOS will not allow the
+    /// change, the value falls back to what is really in force.
+    var opensAtLogin = LoginItem.isEnabled {
+        didSet {
+            guard opensAtLogin != LoginItem.isEnabled else { return }
+            if !LoginItem.setEnabled(opensAtLogin) { opensAtLogin = LoginItem.isEnabled }
+        }
+    }
+    /// Whether the scene's picture is also made the system desktop picture, which is what the lock
+    /// screen shows. Saved between launches.
+    var showsOnLockScreen = UserDefaults.standard.bool(forKey: "showsOnLockScreen") {
+        didSet {
+            UserDefaults.standard.set(showsOnLockScreen, forKey: "showsOnLockScreen")
+            updateLockScreenPicture()
+        }
+    }
     /// A problem to tell the user about, shown as an alert.
     var errorMessage: String?
     /// A passing remark for the status line, such as a picture being smaller than the display.
@@ -78,6 +94,7 @@ final class Desktop {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             notice = try Wallpapers.shared.setCustomImage(from: url, for: scene)
+            updateLockScreenPicture()
         } catch {
             self.errorMessage = error.localizedDescription
         }
@@ -87,9 +104,20 @@ final class Desktop {
     func resetWallpaper(for scene: Scene) {
         Wallpapers.shared.removeCustomImage(for: scene)
         notice = nil
+        updateLockScreenPicture()
+    }
+
+    /// Carries the active scene's picture to the lock screen, or puts the user's own picture back.
+    private func updateLockScreenPicture() {
+        guard showsOnLockScreen, let activeScene, let url = Wallpapers.shared.imageURL(for: activeScene) else {
+            LockScreenPicture.restore()
+            return
+        }
+        LockScreenPicture.show(url)
     }
 
     private func rebuildWindows() {
+        updateLockScreenPicture()
         for window in windows.values { window.close() }
         windows.removeAll()
         synchronizeWindows()

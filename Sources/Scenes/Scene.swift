@@ -23,7 +23,8 @@ struct Scene: Identifiable {
         Scene(weather: .petals, name: "Blossom Creek", caption: "A spring morning by the footbridge", symbolName: "leaf", glowHex: 0xFFE4C6),
         Scene(weather: .leaves, name: "Cider Mill", caption: "Maple leaves and a turning waterwheel", symbolName: "leaf.fill", glowHex: 0xFFE2A1),
         Scene(weather: .fireflies, name: "Lantern Marsh", caption: "Fireflies along a little marsh boardwalk", symbolName: "lightbulb", glowHex: 0xE9EF9F),
-        Scene(weather: .stars, name: "Campfire Lake", caption: "A little camp beneath the Milky Way", symbolName: "sparkles", glowHex: 0xF2DCFF)
+        Scene(weather: .stars, name: "Campfire Lake", caption: "A little camp beneath the Milky Way", symbolName: "sparkles", glowHex: 0xF2DCFF),
+        Scene(weather: .cash, name: "Neon Coast", caption: "Banknotes over a city sunset by the sea", symbolName: "banknote", glowHex: 0xFFC2DD)
     ]
 }
 

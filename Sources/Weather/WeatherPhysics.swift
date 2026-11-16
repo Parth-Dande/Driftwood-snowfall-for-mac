@@ -90,6 +90,7 @@ struct WeatherPhysics {
         case .snow: strength = 20
         case .petals: strength = 30
         case .leaves: strength = 40
+        case .cash: strength = 26
         default: return .zero
         }
         let gust = sin(time * 0.23 + point.x * 0.0021 + point.y * 0.0013)
@@ -294,6 +295,14 @@ struct WeatherPhysics {
             return WeatherBody(radius: .random(in: 4.5...8), terminalSpeed: .random(in: 62...104), swaySpeed: .random(in: 34...66),
                                swayRate: .random(in: 1.0...1.9), phase: phase,
                                spinRate: Bool.random() ? .random(in: -2.6...2.6) : .random(in: -0.4...0.4), tumbles: true)
+        case .cash:
+            // A banknote is broad and nearly weightless for its area: it planes from side to side
+            // in long swings and now and then turns right over.
+            // Notes close to the viewer are larger and cross the screen faster, which gives the fall its depth.
+            let near: CGFloat = isForeground ? .random(in: 1.5...2.0) : .random(in: 0.75...1.25)
+            return WeatherBody(radius: 10.5 * near, terminalSpeed: .random(in: 74...104) * (0.7 + 0.3 * near), swaySpeed: .random(in: 46...84),
+                               swayRate: .random(in: 1.1...1.9), phase: phase,
+                               spinRate: Bool.random() ? .random(in: -1.6...1.6) : .random(in: -0.3...0.3), tumbles: true)
         case .fireflies:
             return WeatherBody(radius: .random(in: 1.6...3), terminalSpeed: .random(in: 12...26), phase: phase, windExposure: 0)
         case .stars:

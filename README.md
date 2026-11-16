@@ -6,7 +6,7 @@
 
 **Snowfall and live weather for your Mac desktop**
 
-A lightweight menu bar app that makes it snow, rain, or drift petals, leaves, fireflies and shooting stars over your wallpaper. The weather lands on your windows, piles up, and reacts when you move them.
+A lightweight menu bar app that makes it snow, rain, or drift petals, leaves, fireflies, shooting stars and even banknotes over your wallpaper. The weather lands on your windows, piles up, and reacts when you move them.
 
 [Features](#-features) • [Installation](#-installation) • [Demo](#-demo) • [Usage](#%EF%B8%8F-usage) • [Privacy](#-privacy) • [Architecture](#%EF%B8%8F-technical-architecture)
 
@@ -29,7 +29,7 @@ A lightweight menu bar app that makes it snow, rain, or drift petals, leaves, fi
 - **🚜 Snow plough** — Send a plough across the screen to clear the drifts
 - **🌬️ Real physics** — Gravity, air drag and shared gusts of wind; big flakes fall faster, leaves rock as they fall
 
-### Six scenes
+### Seven scenes
 
 | Scene | Weather | What it does |
 |-------|---------|--------------|
@@ -39,12 +39,14 @@ A lightweight menu bar app that makes it snow, rain, or drift petals, leaves, fi
 | **Cider Mill** | 🍂 Leaves | Pile up and scatter when the pointer brushes past |
 | **Lantern Marsh** | ✨ Fireflies | Wander, and gather round a still pointer |
 | **Campfire Lake** | 🌠 Meteors | Streak across and burst into sparks on your windows |
+| **Neon Coast** | 💸 Money | Banknotes flutter down, pile up and scatter when the pointer brushes past |
 
 ### And more
 - **🖼️ Your own wallpaper** — Put any picture behind a scene's weather
 - **🖥️ Multi-monitor** — Runs on every connected display
 - **🔋 Battery aware** — Halves the weather on battery or in Low Power Mode
-- **🔒 Private** — Works offline, asks for no permissions, collects nothing
+- **🚀 Runs in the background** — Lives in the menu bar, stays out of the Dock, and can open at login
+- **🔒 Private** — Works offline, needs no system permissions, collects nothing
 
 ---
 
@@ -122,7 +124,9 @@ Compiled apps stay out of Git; installation and updates build directly from sour
 
 ## ⚙️ Usage
 
-Driftwood lives in the menu bar (the cloud-and-moon icon). Close the gallery and the weather keeps running.
+Driftwood lives in the menu bar (the cloud-and-moon icon). Close the gallery and the weather keeps running; Driftwood leaves the Dock and carries on in the background. Click the menu bar icon for the controls, or open the app again to bring the gallery back.
+
+The first time you open it, Driftwood asks what it may do: open at login and keep running in the background, and show the scene's picture on the lock screen. Untick either and nothing else changes; the same two switches sit at the bottom of the gallery, and anything you have not allowed is also offered in the menu bar controls.
 
 ### Controls
 
@@ -135,6 +139,8 @@ Driftwood lives in the menu bar (the cloud-and-moon icon). Close the gallery and
 | **Plough** | Menu bar | Clears settled snow and snowmen |
 | **Change Wallpaper…** | Gallery | Uses your own picture for the selected scene |
 | **Clear** | Gallery, menu bar | Brings back your regular desktop picture |
+| **Open at login** | Gallery | Starts Driftwood in the background when you log in |
+| **Show on lock screen** | Gallery | Uses the scene's picture as the system desktop picture, which the lock screen shows. macOS does not let the weather run there. Your own picture comes back when you clear the scene or quit |
 
 ### Playing with the snow
 - **Move** a window steadily and its snow comes along
@@ -157,7 +163,7 @@ A landscape JPEG, PNG or HEIC at least as large as your biggest display in pixel
 
 ## 🔒 Privacy
 
-- **No permissions** — Driftwood never asks for Screen Recording or Accessibility
+- **No system permissions** — Driftwood never asks for Screen Recording or Accessibility. It asks once whether to open at login and whether to put the scene's picture on the lock screen; both are optional
 - **No network** — It makes no connections and works fully offline
 - **Window positions only** — It reads where windows are, in memory, to know where snow can land; never their contents or titles
 - **No data collection** — Nothing is logged, stored or sent
@@ -177,15 +183,20 @@ A landscape JPEG, PNG or HEIC at least as large as your biggest display in pixel
 ```
 Sources/
 ├── App/
-│   ├── DriftwoodApp.swift        # App entry point: gallery window and menu bar item
-│   └── Desktop.swift             # Shared state: active scene, sliders, wallpaper windows
+│   ├── DriftwoodApp.swift        # App entry point and lifecycle
+│   ├── Desktop.swift             # Shared state: active scene, sliders, wallpaper windows
+│   ├── GalleryWindowController.swift  # The gallery window and Dock presence
+│   ├── StatusItemController.swift     # Menu bar item and its panel of controls
+│   ├── Setup.swift               # First-launch questions
+│   ├── LoginItem.swift           # Opening at login
+│   └── LockScreenPicture.swift   # Scene picture on the lock screen
 ├── Interface/
 │   ├── Gallery.swift             # Scene gallery
 │   ├── StatusMenu.swift          # Menu bar controls
 │   ├── SceneArtwork.swift        # Scene picture view
 │   └── WeatherPreview.swift      # Lightweight preview in the gallery
 ├── Scenes/
-│   ├── Scene.swift               # The six scenes
+│   ├── Scene.swift               # The seven scenes
 │   └── Wallpapers.swift          # Bundled and custom pictures
 ├── Desktop/
 │   ├── WallpaperWindow.swift     # Window behind the desktop icons
@@ -195,7 +206,9 @@ Sources/
 │   ├── WeatherView.swift         # Particles, drifts, plough and snowmen as layers
 │   ├── WeatherPhysics.swift      # Flight paths, collisions, snowbanks
 │   ├── WeatherModels.swift       # Bodies, flights, surfaces, drifts
-│   └── WeatherSprites.swift      # Particle and prop images, drawn in code
+│   ├── WeatherSprites.swift      # Particle and prop images, drawn in code
+│   ├── BanknoteSprites.swift     # Banknote pictures
+│   └── BanknoteLayer.swift       # A banknote as hinged strips that fold and flex
 └── Snow/
     ├── Snowballs.swift           # Rolling, stacking and throwing
     └── SnowPickupView.swift      # Grab strip along the bottom edge
@@ -236,13 +249,13 @@ The build has no package dependencies. With only the Command Line Tools installe
 To start a scene straight away, pass its name:
 
 ```sh
-open build/Driftwood.app --args -applyScene snow   # rain, petals, leaves, fireflies, stars
+open build/Driftwood.app --args -applyScene snow   # rain, petals, leaves, fireflies, stars, cash
 ```
 
 ---
 
 ## 🙏 Credits and License
 
-The six bundled wallpapers were generated for Driftwood with ImageGen. See [Resources/Artwork/REFERENCES.md](Resources/Artwork/REFERENCES.md) for the visual references and prompts.
+Six of the bundled wallpapers were generated for Driftwood with ImageGen; Neon Coast is drawn in code. See [Resources/Artwork/REFERENCES.md](Resources/Artwork/REFERENCES.md) for the visual references and prompts.
 
 Driftwood reuses the desktop window and display identification code from [WallFlow](https://github.com/ritulsingh/WallFlow/tree/b0946f519e9b8143e223ba3a9dceeca454f206a8), copyright 2026 ritulsingh, under the MIT license. The desktop window code was adapted for this app. See [LICENSE-WallFlow](LICENSE-WallFlow) for the full upstream notice. The original Driftwood portions are also available under MIT terms in [LICENSE](LICENSE).

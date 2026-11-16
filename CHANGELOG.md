@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.10.0
+
+- New scene, **Neon Coast**: hundred-dollar notes flutter down over a city sunset. Each note is built from hinged strips, so it is really folded in depth (creased, halved, curled or rippled), flexes as it falls and flips in three dimensions at different distances. Notes pile up on windows and the ground and scatter when the pointer brushes past.
+- Driftwood runs in the background. It stays in the menu bar, shows in the Dock only while the gallery is open, and keeps the weather going with no windows open.
+- On first launch Driftwood asks what it may do, and works without whatever you decline. **Open at Login** starts it with your scene when you log in. **Show on Lock Screen** puts the scene's picture on the lock screen by making it the system desktop picture, and restores your own picture afterwards.
+- The menu bar item is now a native status item that responds on the press and opens its controls directly beneath it, and opening the app again always brings the gallery back.
+
 ## 1.9.0
 
 - Weather now follows gravity, air drag and shared gusts of wind. Flakes fall at a terminal speed set by their size, leaves and petals rock as they fall, and sparks and splashes fly in arcs.

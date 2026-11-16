@@ -38,6 +38,12 @@ struct WeatherPreview: View {
                         trail.addLine(to: point)
                         context.stroke(trail, with: .linearGradient(Gradient(colors: [.clear, tint.opacity(0.72)]),
                                                                      startPoint: start, endPoint: point), lineWidth: unit)
+                    case .cash:
+                        var note = context
+                        note.translateBy(x: point.x, y: point.y)
+                        note.rotate(by: .radians(sin(time * 1.1 + seed) * 0.9 + seed))
+                        note.fill(Path(roundedRect: CGRect(x: -7 * unit, y: -3 * unit, width: 14 * unit, height: 6 * unit), cornerRadius: unit),
+                                  with: .color(Color(hex: 0x7CC27A).opacity(0.85)))
                     case .petals, .leaves:
                         var particle = context
                         particle.translateBy(x: point.x, y: point.y)

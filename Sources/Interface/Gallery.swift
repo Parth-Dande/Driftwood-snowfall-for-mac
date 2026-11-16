@@ -108,6 +108,13 @@ struct Gallery: View {
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.defaultAction)
             }
+            HStack(spacing: 18) {
+                Toggle("Open at login", isOn: $desktop.opensAtLogin)
+                Toggle("Show on lock screen", isOn: $desktop.showsOnLockScreen)
+                    .help("Uses the scene's picture as the system desktop picture, which the lock screen shows. macOS does not let the weather run there.")
+            }
+            .toggleStyle(.checkbox)
+            .font(.callout)
             Text(status)
                 .font(.caption).foregroundStyle(.secondary)
                 .lineLimit(1).truncationMode(.middle)
