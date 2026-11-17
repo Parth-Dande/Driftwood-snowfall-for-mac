@@ -96,9 +96,9 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         outsideClickMonitor = nil
     }
 
+    /// Dismisses the panel when another of Driftwood's own windows is clicked. A menu opened from
+    /// inside the panel does not take the key state away, so the panel stays put for that.
     func windowDidResignKey(_ notification: Notification) {
-        // Clicking another of Driftwood's own windows should dismiss the panel too. A menu opened
-        // from inside the panel does not take the key state away, so it stays put for that.
         close()
     }
 }

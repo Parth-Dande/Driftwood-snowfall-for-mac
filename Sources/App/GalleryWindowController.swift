@@ -30,8 +30,8 @@ final class GalleryWindowController: NSObject, NSWindowDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
+    /// Takes Driftwood out of the Dock. With the gallery gone there is nothing to switch to.
     func windowWillClose(_ notification: Notification) {
-        // With the gallery gone there is nothing to switch to, so leave the Dock as well.
         NSApp.setActivationPolicy(.accessory)
     }
 }

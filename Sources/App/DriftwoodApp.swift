@@ -14,14 +14,17 @@ final class DriftwoodApp: NSObject, NSApplicationDelegate {
     private lazy var gallery = GalleryWindowController(desktop: desktop)
     private lazy var statusItem = StatusItemController(desktop: desktop) { [weak self] in self?.gallery.show() }
 
+    /// Starts the app and runs it until the user quits.
     static func main() {
         let application = NSApplication.shared
         application.delegate = shared
         application.run()
     }
 
+    /// Sets up the menus and the menu bar item, and opens the gallery unless macOS started
+    /// Driftwood at login.
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.mainMenu = MainMenu.make()
+        NSApp.mainMenu = MainMenu.makeMenu()
         statusItem.install()
         // `-showControls YES` opens the menu bar panel straight away, for scripted checks.
         if UserDefaults.standard.bool(forKey: "showControls") {
@@ -32,6 +35,13 @@ final class DriftwoodApp: NSObject, NSApplicationDelegate {
         gallery.show()
         // A scripted launch (`-applyScene`) must not stop to ask questions.
         if UserDefaults.standard.string(forKey: "applyScene") == nil { Setup.offerOnFirstLaunch(for: desktop) }
+        // `-showWallpaperPicker YES` opens the Change Wallpaper picker straight away, for scripted checks.
+        if UserDefaults.standard.bool(forKey: "showWallpaperPicker") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                guard let self else { return }
+                self.desktop.chooseWallpaper(for: self.desktop.activeScene ?? Scene.all[0])
+            }
+        }
     }
 
     /// Clicking the Dock icon, or opening the app again, brings the gallery back.
@@ -40,18 +50,21 @@ final class DriftwoodApp: NSObject, NSApplicationDelegate {
         return false
     }
 
+    /// Keeps Driftwood running, and the weather on the desktop, after the gallery is closed.
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 
+    /// Puts the user's own desktop picture back. With Driftwood gone the desktop shows the system
+    /// picture again, so it must be theirs.
     func applicationWillTerminate(_ notification: Notification) {
-        // With Driftwood gone the desktop shows the system picture again, so it must be the user's own.
-        LockScreenPicture.apply(nil)
+        LockScreenPicture.restoreUserPicture()
     }
 }
 
 /// The menus Driftwood shows while its gallery is in front.
 @MainActor
 private enum MainMenu {
-    static func make() -> NSMenu {
+    /// Makes the menu bar: an app menu and a Window menu.
+    static func makeMenu() -> NSMenu {
         let main = NSMenu()
         let app = NSMenu()
         app.addItem(withTitle: "About Driftwood", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")

@@ -3,7 +3,20 @@ import Foundation
 
 /// The kinds of weather Driftwood can show.
 enum WeatherKind: String {
-    case snow, rain, petals, leaves, fireflies, stars, cash
+    /// Snow that settles on windows and the ground.
+    case snow
+    /// Rain that splashes where it lands.
+    case rain
+    /// Blossom petals carried on the wind.
+    case petals
+    /// Autumn leaves that tumble as they fall.
+    case leaves
+    /// Fireflies that wander and glow.
+    case fireflies
+    /// Stars that twinkle, with the odd shooting star.
+    case stars
+    /// Hundred-dollar notes that flutter down.
+    case cash
 }
 
 /// Something weather can land on: the top edge of a window, or the ground.

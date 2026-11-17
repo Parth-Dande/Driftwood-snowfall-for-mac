@@ -18,7 +18,7 @@ enum LockScreenPicture {
     ///
     /// - Returns: `false` if macOS refused on any display. Driftwood then carries on without it.
     @discardableResult
-    static func apply(_ url: URL?) -> Bool {
+    static func show(pictureAt url: URL?) -> Bool {
         var saved = UserDefaults.standard.dictionary(forKey: savedPicturesKey) as? [String: String] ?? [:]
         var succeeded = true
         for screen in NSScreen.screens {
@@ -45,6 +45,10 @@ enum LockScreenPicture {
         UserDefaults.standard.set(saved, forKey: savedPicturesKey)
         return succeeded
     }
+
+    /// Puts the user's own picture back on every display still showing one of Driftwood's.
+    @discardableResult
+    static func restoreUserPicture() -> Bool { show(pictureAt: nil) }
 
     /// Whether `url` is a scene picture: bundled artwork from any copy of Driftwood, or one the user chose for a scene.
     private static func isDriftwoodPicture(_ url: URL) -> Bool {

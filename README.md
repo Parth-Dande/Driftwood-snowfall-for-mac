@@ -74,16 +74,18 @@ showing me instructions.
    Parth-Dande/driftwood URL is also valid), check for local changes, fetch
    origin, switch to main, and update with git pull --ff-only origin main.
    Preserve local work; stop and explain any conflict or diverged history.
-3. Read the repository instructions and build script, then run ./build.sh
-   from the repository root. Wait for the build to finish successfully.
-4. Verify build/Driftwood.app with codesign --verify --deep --strict and
+3. Read the repository instructions and build script, then quit any
+   running Driftwood app and run ./build.sh --install from the repository
+   root. It builds in a temporary directory and installs one copy of the
+   app, replacing the copy already in /Applications or ~/Applications, so
+   no second Driftwood.app is left on this Mac. Wait for it to finish; it
+   prints the installed path.
+4. Verify the installed app with codesign --verify --deep --strict and
    confirm its executable contains both arm64 and x86_64 with lipo.
-5. Quit any running Driftwood app before replacing it. Update the existing
-   installed copy if its location is writable. For a new installation,
-   create ~/Applications if needed. Use ditto to copy the freshly built app
-   to a new bundle, then replace the old bundle rather than merging into it.
-   Keep the previous app as a backup until the new copy opens successfully.
-   Request permission if the installed location requires elevated access.
+5. If any other Driftwood.app exists on this Mac, such as an older
+   build/Driftwood.app in the repository, tell me where it is and ask
+   before removing it. Request permission if the installed location
+   requires elevated access.
 6. Open the exact installed app path and confirm Driftwood is running.
    Tell me the installed path and source commit. I can then choose a scene
    and select Apply to All Displays.
@@ -243,17 +245,19 @@ Most weather apps redraw every particle on every frame. Driftwood works out each
 git clone https://github.com/Parth-Dande/Driftwood-snowfall-for-mac.git
 cd Driftwood-snowfall-for-mac
 
-# Build the universal app into build/
-./build.sh
-open build/Driftwood.app
+# Build the universal app and install it
+./build.sh --install
+open /Applications/Driftwood.app
 ```
+
+`--install` builds in a temporary directory and replaces the copy in `/Applications` (or `~/Applications`), so there is only ever one Driftwood on your Mac. Plain `./build.sh` builds into `build/` without installing, which is handy while changing the code but shows up as a second app in Spotlight and Launchpad until you delete it.
 
 The build has no package dependencies. With only the Command Line Tools installed, `build.sh` picks an SDK whose SwiftUI does not need Xcode's macro plugin; set `DRIFTWOOD_SDK` to choose one yourself.
 
 To start a scene straight away, pass its name:
 
 ```sh
-open build/Driftwood.app --args -applyScene snow   # rain, petals, leaves, fireflies, stars, cash
+open /Applications/Driftwood.app --args -applyScene snow   # rain, petals, leaves, fireflies, stars, cash
 ```
 
 ---

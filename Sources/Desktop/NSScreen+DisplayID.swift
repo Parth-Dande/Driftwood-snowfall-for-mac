@@ -1,6 +1,7 @@
 import AppKit
 import CoreGraphics
 
+/// What Driftwood needs to know about a display, in the units Core Graphics uses.
 extension NSScreen {
     /// The Core Graphics identifier of this screen's display.
     var displayID: CGDirectDisplayID {
@@ -8,7 +9,7 @@ extension NSScreen {
         return deviceDescription[key] as? CGDirectDisplayID ?? 0
     }
 
-    /// Screen frame in Quartz coordinates (origin at the top-left of the primary display).
+    /// The screen's frame in Quartz coordinates, whose origin is the top-left of the primary display.
     ///
     /// - Complexity: O(n), where n is the number of connected displays.
     var quartzFrame: CGRect {

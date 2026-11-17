@@ -28,6 +28,7 @@ struct Scene: Identifiable {
     ]
 }
 
+/// Colours written the way a designer hands them over.
 extension Color {
     /// Creates a colour from a 24-bit RGB value such as `0xF5EBD7`.
     init(hex: UInt32) {

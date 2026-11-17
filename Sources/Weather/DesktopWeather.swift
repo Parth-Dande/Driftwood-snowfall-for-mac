@@ -36,7 +36,13 @@ final class DesktopWeather {
         }
     }
 
-    private static let idlePace = 0.2
+    private static let idlePace = 0.25
+    /// Seconds between routine looks at where every window is. Each look is a round trip to the
+    /// window server, so this is the main cost of running and is kept as long as feels responsive.
+    private static let surveyInterval = 0.4
+    /// When to look again after something that usually opens, closes or minimises a window. A few
+    /// well-timed looks catch the change as it settles, where looking continuously would cost far more.
+    private static let followUpDelays = [0.08, 0.3, 0.6, 1.0]
     private static let pointerPace = 1.0 / 15
     private static let dragPace = 1.0 / 30
     private static let glidePace = 1.0 / 60
@@ -76,8 +82,8 @@ final class DesktopWeather {
     var isMotionEnabled = true
     private var spaceObserver: NSObjectProtocol?
     private var appObservers: [NSObjectProtocol] = []
-    /// Until this time, survey the windows every tick: something is probably opening or closing.
-    private var alertUntil = 0.0
+    /// The earliest time another round of follow-up looks may be scheduled.
+    private var nextFollowUp = 0.0
 
     /// How long the sky stays empty after a display comes back into view.
     private static let returnDelay = 3.0
@@ -113,8 +119,12 @@ final class DesktopWeather {
             mouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .leftMouseUp]) { [weak self] event in
                 MainActor.assumeIsolated {
                     let now = ProcessInfo.processInfo.systemUptime
-                    if event.type == .leftMouseDown { self?.lastMouseMove = now } else { self?.alertUntil = now + 0.8 }
-                    self?.setPace(Self.dragPace)
+                    if event.type == .leftMouseDown {
+                        self?.lastMouseMove = now
+                        self?.setPace(Self.dragPace)
+                    } else {
+                        self?.surveySoon()
+                    }
                 }
             }
             let center = NSWorkspace.shared.notificationCenter
@@ -122,8 +132,7 @@ final class DesktopWeather {
                          NSWorkspace.didUnhideApplicationNotification, NSWorkspace.didTerminateApplicationNotification] {
                 appObservers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
                     MainActor.assumeIsolated {
-                        self?.alertUntil = ProcessInfo.processInfo.systemUptime + 0.8
-                        self?.setPace(Self.dragPace)
+                        self?.surveySoon()
                     }
                 })
             }
@@ -252,9 +261,8 @@ final class DesktopWeather {
                 dragging = false
             }
         }
-        let alert = now < alertUntil
         if !(dragging && dragGlides) {
-            scanWindows(now: now, minimumInterval: (wasDragging && !dragging) || alert ? 0 : Self.idlePace * 0.9)
+            scanWindows(now: now, minimumInterval: wasDragging && !dragging ? 0 : Self.surveyInterval)
         }
         wasDragging = dragging
         if now - lastUpkeep >= Self.idlePace * 0.9 {
@@ -270,8 +278,7 @@ final class DesktopWeather {
             }
             display.view.advance()
         }
-        setPace(dragging ? (dragGlides ? Self.glidePace : Self.dragPace) : alert ? Self.dragPace
-                    : followsPointer ? Self.pointerPace : Self.idlePace)
+        setPace(dragging ? (dragGlides ? Self.glidePace : Self.dragPace) : followsPointer ? Self.pointerPace : Self.idlePace)
     }
 
     private func applyGeometry(now: Double) {
@@ -373,6 +380,20 @@ final class DesktopWeather {
         geometry[index] = WindowBounds(id: id, rect: rect, layer: old.layer, isDock: old.isDock, isStageManagerWindow: old.isStageManagerWindow)
         geometryRevision += 1
         applyGeometry(now: now)
+    }
+
+    /// Schedules a few extra looks at the windows over the next second.
+    private func surveySoon() {
+        let now = ProcessInfo.processInfo.systemUptime
+        guard timer != nil, now >= nextFollowUp else { return }
+        nextFollowUp = now + 0.5
+        let scheduled = generation
+        for delay in Self.followUpDelays {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                guard let self, self.generation == scheduled, self.timer != nil else { return }
+                self.scanWindows(now: ProcessInfo.processInfo.systemUptime, minimumInterval: 0.05)
+            }
+        }
     }
 
     private func scanWindows(now: Double, minimumInterval: Double) {

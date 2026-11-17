@@ -91,20 +91,42 @@ final class Desktop {
     func sendPlough() { weather.sendPlough() }
 
     /// Lets the user put their own picture behind a scene's weather.
+    ///
+    /// The picker drops down from the gallery window as a sheet. Attached to its window it always
+    /// appears with it, at a sensible size, where a free-standing picker can open on another
+    /// desktop or stage, or not come forward at all.
     func chooseWallpaper(for scene: Scene) {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.jpeg, .png, .heic, .tiff]
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
-        panel.message = "Choose a picture for \(scene.name). \(Wallpapers.guidance)"
+        panel.message = "Choose a picture for \(scene.name)"
         panel.prompt = "Use Picture"
+        let finish: (NSApplication.ModalResponse) -> Void = { [weak self] response in
+            guard response == .OK, let url = panel.url else { return }
+            self?.useWallpaper(at: url, for: scene)
+        }
+        // macOS remembers the size the picker was last left at. Start from a fixed, modest size every
+        // time so one oversized showing can never carry over to the next.
+        UserDefaults.standard.removeObject(forKey: "NSNavPanelExpandedSizeForOpenMode")
+        panel.setContentSize(NSSize(width: 700, height: 440))
         NSApp.activate(ignoringOtherApps: true)
-        guard panel.runModal() == .OK, let url = panel.url else { return }
+        // The gallery is the only window of Driftwood's that can be a main window.
+        if let gallery = NSApp.windows.first(where: { $0.isVisible && $0.canBecomeMain }) {
+            gallery.makeKeyAndOrderFront(nil)
+            panel.beginSheetModal(for: gallery, completionHandler: finish)
+        } else {
+            panel.begin(completionHandler: finish)
+        }
+    }
+
+    /// Copies the picture at `url` in as the picture for `scene`, reporting anything wrong with it.
+    private func useWallpaper(at url: URL, for scene: Scene) {
         do {
             notice = try Wallpapers.shared.setCustomImage(from: url, for: scene)
             updateLockScreenPicture()
         } catch {
-            self.errorMessage = error.localizedDescription
+            errorMessage = error.localizedDescription
         }
     }
 
@@ -119,7 +141,7 @@ final class Desktop {
     /// Safe to call often: it only changes what is not already right.
     private func updateLockScreenPicture() {
         let scene = showsOnLockScreen ? activeScene : nil
-        LockScreenPicture.apply(scene.flatMap { Wallpapers.shared.imageURL(for: $0) })
+        LockScreenPicture.show(pictureAt: scene.flatMap { Wallpapers.shared.imageURL(for: $0) })
     }
 
     private func rebuildWindows() {

@@ -20,6 +20,7 @@ enum Banknote {
         /// Bent into a wave.
         case rippled
 
+        /// The resting tilt, in radians, of the strip at `index` in a note cut into `count` strips.
         func tilt(ofStrip index: Int, among count: Int) -> CGFloat {
             let position = (CGFloat(index) + 0.5) / CGFloat(count)
             switch self {

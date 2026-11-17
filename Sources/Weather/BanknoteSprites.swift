@@ -16,6 +16,22 @@ extension Sprite {
 
     /// One side of a flat note, lit as `shade` describes.
     static func banknote(showingFace isFace: Bool, shade: BanknoteShade) -> CGImage {
+        // Every strip of every note asks for one of these six pictures, so each is made only once.
+        let key = BanknoteKey(isFace: isFace, shade: shade)
+        if let made = banknotes[key] { return made }
+        let picture = makeBanknote(showingFace: isFace, shade: shade)
+        banknotes[key] = picture
+        return picture
+    }
+
+    private struct BanknoteKey: Hashable {
+        let isFace: Bool
+        let shade: BanknoteShade
+    }
+
+    private static var banknotes: [BanknoteKey: CGImage] = [:]
+
+    private static func makeBanknote(showingFace isFace: Bool, shade: BanknoteShade) -> CGImage {
         let side = isFace ? "face" : "reverse"
         let flat = photograph(named: "banknote-\(side)") ?? (isFace ? flatFace : flatReverse)
         guard shade != .plain else { return flat }
