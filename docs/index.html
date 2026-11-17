@@ -181,6 +181,15 @@
   }
   .code button:hover { background: rgba(255, 255, 255, 0.16); }
   .note { color: var(--muted); font-size: 15px; margin: 22px 0 0; max-width: 760px; }
+  .warning {
+    display: flex; gap: 12px; align-items: flex-start; max-width: 960px; margin: 0 0 6px;
+    padding: 16px 18px; border-radius: 14px; font-size: 15.5px; line-height: 1.55;
+    color: #ffd9d9; background: rgba(255, 77, 77, 0.12); border: 1px solid rgba(255, 99, 99, 0.55);
+  }
+  .warning svg { width: 22px; height: 22px; flex: none; margin-top: 1px; fill: #ff6b6b; }
+  .warning b { color: #ff8f8f; }
+  .warning code { color: #fff; }
+  .step .warning { margin-top: 12px; font-size: 14.5px; padding: 12px 14px; }
 
   /* Footer */
   footer { border-top: 1px solid var(--line); padding: 44px 0 56px; background: #080d18; }
@@ -330,6 +339,7 @@
     <p class="kicker">Install</p>
     <h2>Up in a few minutes.</h2>
     <p class="intro">Driftwood is built on your own Mac from its source, so there is nothing unsigned to download.</p>
+    <p class="warning" role="note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z"/></svg><span><b>About 1 GB download, only if you need it.</b> Building Driftwood needs Apple's free Command Line Tools. If they are missing, macOS installs them first, which is about a 1&nbsp;GB download. This is <b>not</b> the full Xcode app (over 10&nbsp;GB), and nothing is downloaded if you already have them. To check, run <code>xcode-select -p</code> in Terminal: a path means you are ready.</span></p>
     <details class="install-option" open>
       <summary>Option 1: Install with an AI agent</summary>
       <div class="install-content">
@@ -373,9 +383,10 @@ in place; do not disable Gatekeeper or remove quarantine attributes.</pre><butto
       <div class="install-content">
     <div class="steps">
       <div class="step">
-        <h3>Get Apple's developer tools</h3>
-        <p>Skip this if you already have Xcode or the Command Line Tools.</p>
+        <h3>Get Apple's free build tools</h3>
+        <p>Skip this if you already have Xcode or the Command Line Tools. Despite its name, this command does not install Xcode.</p>
         <div class="code"><pre>xcode-select --install</pre><button type="button">Copy</button></div>
+        <p class="warning" role="note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z"/></svg><span><b>About 1 GB.</b> Not the 10&nbsp;GB Xcode app. If the tools are already installed, it downloads nothing.</span></p>
       </div>
       <div class="step">
         <h3>Download and install Driftwood</h3>
