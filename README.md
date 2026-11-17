@@ -36,7 +36,7 @@ Driftwood comes with seven themes, each with its own wallpaper and its own weath
 | Theme | Weather | What it does |
 |-------|---------|--------------|
 | **Snow Lantern Inn** | ❄️ Snow | Piles up on windows and the ground |
-| **The Rainy Bookshop** | 🌧️ Rain | Splashes on window tops, with lightning now and then |
+| **The Rainy Bookshop** | 🌧️ Rain | Splashes on window tops |
 | **Blossom Creek** | 🌸 Petals | Drift down and rest on your windows |
 | **Cider Mill** | 🍂 Leaves | Pile up and scatter when the pointer brushes past |
 | **Lantern Marsh** | ✨ Fireflies | Wander, and gather round a still pointer |

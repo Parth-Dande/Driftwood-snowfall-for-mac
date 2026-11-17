@@ -31,9 +31,9 @@
     font: 17px/1.6 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
-  img { max-width: 100%; display: block; }
+  img { max-width: 100%; height: auto; display: block; }
   a { color: inherit; }
-  .wrap { width: min(1080px, 100% - 40px); margin-inline: auto; }
+  .wrap { width: min(1240px, 100% - 40px); margin-inline: auto; }
 
   /* Navigation */
   nav {
@@ -80,7 +80,7 @@
   .actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
   .fine { margin: 18px 0 0; color: var(--muted); font-size: 14px; }
   .screen {
-    margin: 54px auto 0; width: min(900px, 100%);
+    margin: 54px auto 0; width: min(1080px, 100%);
     border-radius: 16px 16px 0 0; overflow: hidden;
     border: 1px solid var(--line); border-bottom: 0;
     box-shadow: 0 -10px 80px rgba(120, 170, 255, 0.16);
@@ -88,7 +88,7 @@
   }
   .screen .bar { display: flex; gap: 7px; padding: 11px 14px; background: #1b2540; }
   .screen .bar i { width: 11px; height: 11px; border-radius: 50%; background: #3a4666; }
-  .screen img { width: 100%; }
+  .screen img { width: 100%; height: auto; }
 
   /* Sections */
   section { padding: 92px 0; border-top: 1px solid var(--line); }
@@ -98,14 +98,16 @@
   .intro { color: var(--muted); max-width: 620px; margin: 0 0 44px; }
 
   /* Demo rows */
-  .demo { display: grid; grid-template-columns: 1fr 1.25fr; gap: 44px; align-items: center; margin-bottom: 72px; }
+  .demo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.75fr); gap: 44px; align-items: center; margin-bottom: 72px; }
   .demo:last-child { margin-bottom: 0; }
+  .demo.flip { grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); }
   .demo.flip .shot { order: -1; }
+  .shot img { width: 100%; height: auto; }
   .demo h3 { font-size: 26px; line-height: 1.2; letter-spacing: -0.02em; margin: 0 0 10px; }
   .demo p { color: var(--muted); margin: 0; }
   .shot { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); background: #000; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4); }
   @media (max-width: 800px) {
-    .demo { grid-template-columns: 1fr; gap: 20px; }
+    .demo, .demo.flip { grid-template-columns: minmax(0, 1fr); gap: 20px; }
     .demo.flip .shot { order: 0; }
   }
 
@@ -144,6 +146,15 @@
   .number span { color: var(--muted); font-size: 15px; }
 
   /* Install */
+  .install-option { max-width: 960px; margin-top: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+  .install-option summary { padding: 20px 22px; cursor: pointer; font-size: 19px; font-weight: 600; }
+  .install-option summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+  .install-content { padding: 0 22px 22px; }
+  .install-content > p { margin: 0 0 14px; color: var(--muted); }
+  .install-content .note { margin: 18px 0 0; }
+  .code.prompt pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 56px 18px 18px; }
+  .copy-status { padding: 0 16px; color: var(--muted); font-size: 14px; }
+  .copy-status:empty { display: none; }
   .steps { display: grid; gap: 14px; counter-reset: step; max-width: 760px; }
   .step { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px 20px 66px; position: relative; }
   .step::before {
@@ -319,6 +330,47 @@
     <p class="kicker">Install</p>
     <h2>Up in a few minutes.</h2>
     <p class="intro">Driftwood is built on your own Mac from its source, so there is nothing unsigned to download.</p>
+    <details class="install-option" open>
+      <summary>Option 1: Install with an AI agent</summary>
+      <div class="install-content">
+        <p>Paste this prompt into any AI coding agent that can run commands on your Mac, such as Codex or Claude Code. It will check the requirements, build Driftwood, and open the installed app.</p>
+        <div class="code prompt"><pre>Install or update Driftwood on my Mac from the latest main branch of
+https://github.com/Parth-Dande/Driftwood-snowfall-for-mac.
+Please run the commands and complete the installation, rather than just
+showing me instructions.
+
+1. Check that this Mac runs macOS 14 or later and has Xcode or the Xcode
+   Command Line Tools. If the tools are missing, run xcode-select --install
+   and wait for me to finish Apple&#x27;s installer before continuing.
+2. Clone the repository into ~/Developer/Driftwood if it is not already
+   there. If it exists, verify its origin is the repository above (the old
+   Parth-Dande/driftwood URL is also valid), check for local changes, fetch
+   origin, switch to main, and update with git pull --ff-only origin main.
+   Preserve local work; stop and explain any conflict or diverged history.
+3. Read the repository instructions and build script, then quit any
+   running Driftwood app and run ./build.sh --install from the repository
+   root. It builds in a temporary directory and installs one copy of the
+   app, replacing the copy already in /Applications or ~/Applications, so
+   no second Driftwood.app is left on this Mac. Wait for it to finish; it
+   prints the installed path.
+4. Verify the installed app with codesign --verify --deep --strict and
+   confirm its executable contains both arm64 and x86_64 with lipo.
+5. If any other Driftwood.app exists on this Mac, such as an older
+   build/Driftwood.app in the repository, tell me where it is and ask
+   before removing it. Request permission if the installed location
+   requires elevated access.
+6. Open the exact installed app path and confirm Driftwood is running.
+   Tell me the installed path and source commit. I can then choose a scene
+   and select Apply to All Displays.
+
+Build locally from the checked-out source. Keep macOS security protections
+in place; do not disable Gatekeeper or remove quarantine attributes.</pre><button type="button" aria-label="Copy AI installation prompt">Copy</button><p class="copy-status" role="status"></p></div>
+        <p class="note">To update, paste the same prompt again. The agent will fetch the latest main branch and rebuild your installed app while preserving local work.</p>
+      </div>
+    </details>
+    <details class="install-option">
+      <summary>Option 2: Install with Terminal</summary>
+      <div class="install-content">
     <div class="steps">
       <div class="step">
         <h3>Get Apple's developer tools</h3>
@@ -338,7 +390,9 @@ cd Driftwood-snowfall-for-mac
         <div class="code"><pre>open /Applications/Driftwood.app</pre><button type="button">Copy</button></div>
       </div>
     </div>
-    <p class="note">To update, run <code>git pull</code> and <code>./build.sh --install</code> again in the same folder. Prefer to let an AI assistant do it? The <a href="https://github.com/Parth-Dande/Driftwood-snowfall-for-mac#-installation">README has a prompt</a> you can paste into Claude Code or Codex.</p>
+        <p class="note">To update, run <code>git pull --ff-only origin main</code> and <code>./build.sh --install</code> again in the same folder.</p>
+      </div>
+    </details>
   </div>
 </section>
 
@@ -360,7 +414,14 @@ cd Driftwood-snowfall-for-mac
   for (const button of document.querySelectorAll('.code button')) {
     button.addEventListener('click', async () => {
       const text = button.previousElementSibling.textContent;
-      try { await navigator.clipboard.writeText(text); } catch { return; }
+      const status = button.parentElement.querySelector('.copy-status');
+      try {
+        await navigator.clipboard.writeText(text);
+        if (status) status.textContent = '';
+      } catch {
+        if (status) status.textContent = 'Could not copy automatically. Select the prompt above and copy it manually.';
+        return;
+      }
       button.textContent = 'Copied';
       setTimeout(() => { button.textContent = 'Copy'; }, 1600);
     });
