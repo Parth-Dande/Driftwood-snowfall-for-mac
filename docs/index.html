@@ -339,7 +339,7 @@
     <p class="kicker">Install</p>
     <h2>Up in a few minutes.</h2>
     <p class="intro">Driftwood is built on your own Mac from its source, so there is nothing unsigned to download.</p>
-    <p class="warning" role="note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z"/></svg><span><b>About 1 GB download, only if you need it.</b> Building Driftwood needs Apple's free Command Line Tools. If they are missing, macOS installs them first, which is about a 1&nbsp;GB download. This is <b>not</b> the full Xcode app (over 10&nbsp;GB), and nothing is downloaded if you already have them. To check, run <code>xcode-select -p</code> in Terminal: a path means you are ready.</span></p>
+    <p class="warning" role="note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z"/></svg><span><b>Needs about 1&nbsp;GB the first time.</b> Building Driftwood needs Apple's free Command Line Tools, which macOS downloads the first time. If you already have them, nothing is downloaded.</span></p>
     <details class="install-option" open>
       <summary>Option 1: Install with an AI agent</summary>
       <div class="install-content">
@@ -384,9 +384,8 @@ in place; do not disable Gatekeeper or remove quarantine attributes.</pre><butto
     <div class="steps">
       <div class="step">
         <h3>Get Apple's free build tools</h3>
-        <p>Skip this if you already have Xcode or the Command Line Tools. Despite its name, this command does not install Xcode.</p>
+        <p>Skip this if you already have Xcode or the Command Line Tools.</p>
         <div class="code"><pre>xcode-select --install</pre><button type="button">Copy</button></div>
-        <p class="warning" role="note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 1 21h22L12 2zm1 15h-2v-2h2v2zm0-4h-2V9h2v4z"/></svg><span><b>About 1 GB.</b> Not the 10&nbsp;GB Xcode app. If the tools are already installed, it downloads nothing.</span></p>
       </div>
       <div class="step">
         <h3>Download and install Driftwood</h3>
