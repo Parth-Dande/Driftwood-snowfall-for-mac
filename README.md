@@ -8,7 +8,7 @@
 
 A lightweight menu bar app that makes it snow, rain, or drift petals, leaves, fireflies, shooting stars and even banknotes over your wallpaper. The weather lands on your windows, piles up, and reacts when you move them.
 
-[Features](#-features) • [Installation](#-installation) • [Demo](#-demo) • [Usage](#%EF%B8%8F-usage) • [Privacy](#-privacy) • [Architecture](#%EF%B8%8F-technical-architecture)
+**[🌐 Website](https://parth-dande.github.io/Driftwood-snowfall-for-mac/)** • [Features](#-features) • [Installation](#-installation) • [Demo](#-demo) • [Usage](#%EF%B8%8F-usage) • [Privacy](#-privacy) • [Architecture](#%EF%B8%8F-technical-architecture)
 
 [![macOS](https://img.shields.io/badge/macOS-14.0+-blue.svg)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
