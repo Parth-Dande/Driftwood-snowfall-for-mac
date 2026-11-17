@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// The app's state: which scene is on the desktop, how its weather is set, and the windows that show it.
 @MainActor
@@ -41,6 +42,8 @@ final class Desktop {
     }
     /// A problem to tell the user about, shown as an alert.
     var errorMessage: String?
+    /// A passing remark for the status line, such as a picture being smaller than the display.
+    var notice: String?
     private let weather = DesktopWeather()
     private var windows: [CGDirectDisplayID: WallpaperWindow] = [:]
     private var observation: NSObjectProtocol?
@@ -71,6 +74,7 @@ final class Desktop {
     /// Shows `scene` and its weather on every display.
     func apply(_ scene: Scene) {
         activeScene = scene
+        notice = nil
         UserDefaults.standard.set(scene.id, forKey: "activeScene")
         rebuildWindows()
     }
@@ -78,12 +82,38 @@ final class Desktop {
     /// Removes the scene and weather, revealing the regular desktop picture.
     func clear() {
         activeScene = nil
+        notice = nil
         UserDefaults.standard.removeObject(forKey: "activeScene")
         rebuildWindows()
     }
 
     /// Sends a plough across each display to clear settled snow.
     func sendPlough() { weather.sendPlough() }
+
+    /// Lets the user put their own picture behind a scene's weather.
+    func chooseWallpaper(for scene: Scene) {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.jpeg, .png, .heic, .tiff]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.message = "Choose a picture for \(scene.name). \(Wallpapers.guidance)"
+        panel.prompt = "Use Picture"
+        NSApp.activate(ignoringOtherApps: true)
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            notice = try Wallpapers.shared.setCustomImage(from: url, for: scene)
+            updateLockScreenPicture()
+        } catch {
+            self.errorMessage = error.localizedDescription
+        }
+    }
+
+    /// Restores the bundled picture for `scene`.
+    func resetWallpaper(for scene: Scene) {
+        Wallpapers.shared.removeCustomImage(for: scene)
+        notice = nil
+        updateLockScreenPicture()
+    }
 
     /// Carries the active scene's picture to the lock screen, or puts the user's own picture back.
     /// Safe to call often: it only changes what is not already right.

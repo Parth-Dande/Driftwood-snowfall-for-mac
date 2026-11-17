@@ -46,6 +46,7 @@ Driftwood comes with seven themes, each with its own wallpaper and its own weath
 **🎮 For GTA fans** — there's a GTA theme too, with its own wallpaper and a money-rain animation: hundred-dollar notes that fold, flip and pile up on your windows.
 
 ### And more
+- **🖼️ Your own wallpaper** — Put any picture behind a scene's weather
 - **🖥️ Multi-monitor** — Runs on every connected display
 - **🔋 Battery aware** — Halves the weather on battery or in Low Power Mode
 - **🚀 Runs in the background** — Lives in the menu bar, stays out of the Dock, and can open at login
@@ -140,6 +141,7 @@ The first time you open it, Driftwood asks what it may do: open at login and kee
 | **Fall speed** | Gallery, menu bar | Runs weather time slower or faster; the default is natural speed |
 | **Motion** | Gallery, menu bar | Stops the weather and keeps the picture |
 | **Plough** | Menu bar | Clears settled snow and snowmen |
+| **Change Wallpaper…** | Gallery | Uses your own picture for the selected scene |
 | **Clear** | Gallery, menu bar | Brings back your regular desktop picture |
 | **Open at login** | Gallery | Starts Driftwood in the background when you log in |
 | **Show on lock screen** | Gallery | Uses the scene's picture as the system desktop picture, which the lock screen shows. macOS does not let the weather run there. Your own picture comes back when you clear the scene or quit |
@@ -151,6 +153,9 @@ The first time you open it, Driftwood asks what it may do: open at login and kee
 - **Roll** a snowball by dragging up from the bottom edge of the screen
 - **Stack** three snowballs to build a snowman
 - **Throw** a snowball by letting go while moving fast
+
+### Your own wallpaper
+A landscape JPEG, PNG or HEIC at least as large as your biggest display in pixels stays sharp; the gallery shows the exact size. **Use Original** brings the bundled artwork back.
 
 ### Good to know
 - The weather sits just beneath the Dock and above your windows, and clicks pass straight through it
@@ -196,7 +201,7 @@ Sources/
 │   └── WeatherPreview.swift      # Lightweight preview in the gallery
 ├── Scenes/
 │   ├── Scene.swift               # The seven scenes
-│   └── Wallpapers.swift          # The picture that comes with each scene
+│   └── Wallpapers.swift          # Bundled and custom pictures
 ├── Desktop/
 │   ├── WallpaperWindow.swift     # Window behind the desktop icons
 │   └── NSScreen+DisplayID.swift  # Display helpers
